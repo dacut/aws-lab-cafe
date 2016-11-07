@@ -8,7 +8,8 @@ permissions:
     pattern: "*"
     except: ["activate*"]
     mode: 755
-    type: file
+    type:
+      - file
 hooks:
   ApplicationStart:
     - location: /webapps/hpc-lab-maker/bin/hpclab-start
