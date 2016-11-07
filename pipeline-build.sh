@@ -2,8 +2,8 @@
 test -d venv && rm -r venv
 virtualenv venv/pipeline
 source venv/pipeline/bin/activate
-python ./setup.py build
-python ./setup.py install
+pip install -r requirements.txt
 cp bin/hpclab-start.sh bin/hpclab-stop.sh venv/pipeline/bin
 cp appspec.yml venv/pipeline
+cp -a hpclab.py static templates venv/pipeline
 deactivate
