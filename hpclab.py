@@ -9,17 +9,7 @@ app = Flask(__name__)
 
 API_ENDPOINT = "https://0hud6wdi6a.execute-api.us-west-2.amazonaws.com/dev"
 
-@app.route("/<path:path>", methods=["GET", "POST", "PUT"])
-def index(*args, **kw):
-    result = StringIO()
-    result.write("request:\n")
-    result.write(str(request) + "\n")
-    result.write("args:\n")
-    for i, arg in enumerate(args):
-        result.write("%2d %s\n" % (i, arg))
-
-    result.write("\n\nkw:\n")
-    for key, value in kw.iteritems():
-        result.write("%s=%r\n" % (key, value))
-
-    return result.getvalue()
+@app.route("/", methods=["GET"], defaults={'page': "index.html"})
+@app.route("/<path:page>", methods=["GET"])
+def index(page, **kw):
+    return render_template(page)
