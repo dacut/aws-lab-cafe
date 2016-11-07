@@ -1,7 +1,6 @@
 #!/bin/bash -e
-VIRTUAL_ENV=/webapps/hpc-lab-maker
-PATH=$VIRTUAL_ENV/bin:$PATH
-export PATH VIRTUAL_ENV
+source /webapps/hpc-lab-maker/bin/activate
+
 test -d $VIRTUAL_ENV/run || mkdir -p $VIRTUAL_ENV/run
 test -d $VIRTUAL_ENV/log || mkdir -p $VIRTUAL_ENV/log
 cd $VIRTUAL_ENV

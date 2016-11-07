@@ -1,7 +1,5 @@
 #!/bin/bash -e
-VIRTUAL_ENV=/webapps/hpc-lab-maker
-PATH=$VIRTUAL_ENV/bin:$PATH
-export PATH VIRTUAL_ENV
+source /webapps/hpc-lab-maker/bin/activate
 
 if [[ -r $VIRTUAL_ENV/run/flask.pid ]]; then
     flask_pid=$(cat $VIRTUAL_ENV/run/flask.pid)

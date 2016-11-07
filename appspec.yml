@@ -11,6 +11,8 @@ permissions:
     type:
       - file
 hooks:
+  BeforeInstall:
+    - location: bin/hpclab-makevenv.sh
   ApplicationStart:
     - location: bin/hpclab-start.sh
   ApplicationStop:
