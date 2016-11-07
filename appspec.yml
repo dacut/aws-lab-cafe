@@ -6,7 +6,7 @@ files:
 permissions:
   - object: /webapps/hpc-lab-maker/bin
     pattern: "*"
-    except: "activate*"
+    except: ["activate*"]
     mode: 755
     type: file
 hooks:
