@@ -12,6 +12,6 @@ permissions:
       - file
 hooks:
   ApplicationStart:
-    - location: /webapps/hpc-lab-maker/bin/hpclab-start
+    - location: bin/hpclab-start.sh
   ApplicationStop:
-    - location: /webapps/hpc-lab-maker/bin/hpclab-stop
+    - location: bin/hpclab-stop.sh
