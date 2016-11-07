@@ -12,4 +12,4 @@ API_ENDPOINT = "https://0hud6wdi6a.execute-api.us-west-2.amazonaws.com/dev"
 @app.route("/", methods=["GET"], defaults={'page': "index.html"})
 @app.route("/<path:page>", methods=["GET"])
 def index(page, **kw):
-    return render_template(page)
+    return render_template(page, static_prefix="static/")
