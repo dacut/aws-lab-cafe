@@ -1,0 +1,16 @@
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /webapps/hpc-lab-maker
+permissions:
+  - object: /webapps/hpc-lab-maker/bin
+    pattern: "*"
+    except: "activate*"
+    mode: 755
+    type: file
+hooks:
+  ApplicationStart:
+    - location: /webapps/hpc-lab-maker/bin/hpclab-start
+  ApplicationStop:
+    - location: /webapps/hpc-lab-maker/bin/hpclab-stop
