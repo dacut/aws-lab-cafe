@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="{{static_prefix}}css/bootstrap.min.css">
     <link rel="stylesheet" href="{{static_prefix}}css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="{{static_prefix}}css/hpclab.css">
     <title>{% block title %}{% endblock title %}</title>
     {% endblock head %}
   </head>
@@ -27,13 +28,30 @@
           <ul class="nav navbar-nav">
             <li class="{% block navbar_home_class %}{% endblock %}"><a href="{% block navbar_home_link %}{{prefix}}{% endblock %}">Home</a></li>
             <li class="{% block navbar_lab_class %}{% endblock %}"><a href="{% block navbar_lab_link %}{{prefix}}lab-setup{% endblock %}">Lab Setup</a></li>
-            <li class="{% block navbar_account_class %}{% endblock %}"><a href="{% block navbar_account_link %}{{prefix}}account{% endblock %}">Your Account</a></li>
+            <li class="{% block navbar_account_class %}{% endblock %} right"><a href="{% block navbar_account_link %}{{prefix}}account{% endblock %}">Your Account</a></li>
           </ul>
         </div>
       </div>
     </nav>
     {% endblock topnav %}
     {% block body %}
+    <div class="container">
+      {% block flashed_messages %}
+      {% for category in ("error", "warning", "info") %}
+      {% with messages = get_flashed_messages(category_filter=[category]) %}
+      {% if messages %}
+      {% for message in messages %}
+      <div class="row">
+        <div class="col-xs-12 col-sm-12 callout callout-{{ category }}">{{ message|safe }}</div>
+      </div>
+      {% endfor %}
+      {% endif %}
+      {% endwith %}
+      {% endfor %}
+      {% endblock flashed_messages %}
+      {% block body_container %}
+      {% endblock body_container %}
+    </div>
     {% endblock body %}
     {% block bodytailscripts %}
     <script src="{{static_prefix}}js/jquery-3.1.1.js"></script>

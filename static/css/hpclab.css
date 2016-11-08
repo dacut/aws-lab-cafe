@@ -1,0 +1,27 @@
+body {
+  padding-top: 70px;
+}
+
+.hint {
+  font-size: 70%;
+}
+
+div.callout {
+  padding: 20px;
+  margin: 20px;
+  border: 1px solid #eee;
+  border-left-width: 10px;
+  border-radius: 3px;
+}
+
+div.callout-error {
+  border-left-color: #ff0000;
+}
+
+div.callout-warning {
+  border-left-color: #eeee00;
+}
+
+div.callout-info {
+  border-left-color: #0000cc;
+}
