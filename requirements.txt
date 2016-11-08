@@ -1,5 +1,5 @@
 boto3 >= 1.0
 Flask >= 0.11
-Flask-Login >= 0.4
 passlib >= 1.6
 six >= 1.10
+validate_email >= 1.3

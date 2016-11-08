@@ -1,17 +1,21 @@
 #!/usr/bin/env python2.7
 from __future__ import absolute_import, print_function
-from cStringIO import StringIO
 from base64 import b64encode
+from botocore.exceptions import ClientError
 from boto3.session import Session as Boto3Session
+from cracklib import VeryFascistCheck
+from cStringIO import StringIO
 from flask import (
-    flash, Flask, g, make_response, redirect, render_template, request, session,
-    url_for,
+    escape, flash, Flask, g, make_response, redirect, render_template, request,
+    session, url_for,
 )
 from functools import wraps
-from httplib import FORBIDDEN, UNAUTHORIZED
+from httplib import BAD_REQUEST, FORBIDDEN, UNAUTHORIZED
 from os import environ, urandom
 from passlib.hash import pbkdf2_sha512
 from six import text_type
+from time import time
+from validate_email import validate_email
 
 # Customize the Boto3Session arguments according to your needs.
 b3_session = Boto3Session(region_name="us-west-2")
@@ -117,6 +121,38 @@ def login_user(email, password, event_id):
 
     return item
 
+def register_user(email, password, event_id, full_name, allow_contact):
+    """
+    If the user does not already exist for this event, register him/her.
+    """
+    pwhash = pbkdf2_sha512.encrypt(password)
+    item = {
+        "Email": email,
+        "EventId": event_id,
+        "PasswordHash": pwhash,
+        "FullName": full_name,
+        "AllowContact": allow_contact,
+        "CreationDate": int(time()),
+    }
+
+    try:
+        ddb_users.put_item(
+            Item=item,
+            ConditionExpression="attribute_not_exists(EventId)",
+            ReturnConsumedCapacity="TOTAL",
+        )
+    except ClientError as e:
+        error_code = getattr(e, "response", {}).get("Error", {}).get("Code", "")
+        if error_code == u"ConditionalCheckFailedException":
+            # User already exists.
+            return None
+        raise
+
+    session["Email"] = email
+    session["EventId"] = event_id
+    del item["PasswordHash"]
+    return item
+
 # CSRF protection
 @app.before_request
 def csrf_protect():
@@ -148,7 +184,7 @@ def require_valid_session(f):
         if request.user is None:
             del session["Email"]
             del session["EventId"]
-            raise redirect("/login")
+            return redirect("/login")
 
         return f(*args, **kw)
 
@@ -161,28 +197,105 @@ def index(**kw):
 
 @app.route("/login", methods=["GET"])
 def login(**kw):
-    return render_template("login.html")
+    return render_template("login.html", form={})
 
 @app.route("/login", methods=["POST"])
 def login_post(**kw):
+    action = request.form.get("Action")
     event_id = request.form.get("EventId")
     email = request.form.get("Email")
+    full_name = request.form.get("FullName")
     password = request.form.get("Password")
+    action = request.form.get("Action")
+    password_verify = request.form.get("PasswordVerify")
+    allow_contact = request.form.get("AllowContact")
 
-    if event_id is None or email is None or password is None:
-        return redirect("/login")
+    def redo(status_code):
+        return make_response(
+            render_template("login.html", form=request.form), status_code)
 
-    if not is_valid_event_id(event_id):
-        flash("Unknown event code %s" % event_id, category="error")
-        return make_response(render_template("login.html"), UNAUTHORIZED)
+    if action == "Login":
+        if event_id is None or email is None or password is None:
+            flash("<b>Missing form fields</b>", category="error")
+            return redo(BAD_REQUEST)
 
-    user = login_user(email, password, event_id)
-    if not user:
-        flash("<b>Invalid username or password</b>", category="error")
-        return make_response(render_template("login.html"), UNAUTHORIZED)
+        if not is_valid_event_id(event_id):
+            flash("<b>Unknown event code %s</b>" % escape(event_id),
+                category="error")
+            return redo(UNAUTHORIZED)
 
-    next = request.args.get("next")
-    return redirect(next or url_for("/"))
+        user = login_user(email, password, event_id)
+        if not user:
+            flash("<b>Invalid username or password</b>", category="error")
+            return redo(UNAUTHORIZED)
+
+        next = request.args.get("next")
+        return redirect(next or url_for("/"))
+    elif action == "Register":
+        if (event_id is None or email is None or password is None or
+            password_verify is None or full_name is None):
+            flash("<b>Missing form fields</b>")
+            return redo(BAD_REQUEST)
+
+        if not event_id:
+            flash("<b>Missing event code</b>", category="error")
+            return redo(BAD_REQUEST)
+
+        if not is_valid_event_id(event_id):
+            flash("<b>Unknown event code %s</b>" % escape(event_id),
+                category="error")
+            return redo(UNAUTHORIZED)
+
+        if not validate_email(email):
+            flash("<b>Invalid email address</b>", category="error")
+            return redo(BAD_REQUEST)
+
+        password_errors = []
+        if len(password) < 12:
+            password_errors.append("Password is too short.")
+
+        upper_seen = lower_seen = digit_seen = symbol_seen = False
+        for c in password:
+            upper_seen |= c.isupper()
+            lower_seen |= c.islower()
+            digit_seen |= c.isdigit()
+            symbol_seen |= not(c.isupper() and c.islower() and c.isdigit())
+
+        if not upper_seen:
+            password_errors.append("Password does not contain an uppercase letter.")
+        if not lower_seen:
+            password_errors.append("Password does not contain a lowercase letter.")
+        if not digit_seen:
+            password_errors.append("Password does not contain a digit.")
+        if not symbol_seen:
+            password_errors.append("Password does not contain a symbol.")
+        try:
+            if not password_errors:
+                VeryFascistCheck(password)
+        except ValueError:
+            password_errors.append(
+                "Password is easily guessed "
+                "(was guessed by <a href=\"https://www.cyberciti.biz/security/linux-password-strength-checker/\">Cracklib</a>).")
+
+        if password != password_verify:
+            password_errors.append("Passwords do not match.")
+
+        if password_errors:
+            flash("<b>Invalid password:</b><br>" + "<br>".join(password_errors),
+                  category="error")
+            return redo(BAD_REQUEST)
+
+        user = register_user(email, password, event_id, full_name, allow_contact)
+        if user is None:
+            flash("<b>User is already registered. "
+                  "<a href='/forgot-password'>Click here</a> to reset your "
+                  "password.</b>", category="error")
+            return redo(BAD_REQUEST)
+
+        return redirect("/")
+    else:
+        flash("<b>Invalid form data sent</b>", category="error")
+        return redo(BAD_REQUEST)
 
 @app.route("/logout", methods=["GET", "POST"])
 def logout(**kw):
