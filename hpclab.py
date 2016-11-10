@@ -557,7 +557,7 @@ def login_post(**kw):
             return redo(UNAUTHORIZED)
 
         next = request.args.get("next")
-        return redirect(next or url_for("/"))
+        return redirect(next or "/")
     elif action == "Register":
         if (event_id is None or email is None or password is None or
             password_verify is None or full_name is None):
@@ -635,7 +635,7 @@ def logout(**kw):
         session.modified = True
 
     if session.modified:
-        flash("You have been logged out.", category="info")
+        flash("<b>You have been logged out.</b>", category="info")
     return redirect("/login")
 
 if __name__ == "__main__":
