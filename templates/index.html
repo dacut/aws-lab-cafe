@@ -55,5 +55,61 @@
       </tr>
     </table>
   </div>
+  <div class="col-xs-12 col-sm-6">
+    <h2>Connection Instructions</h2>
+    <ul class="nav nav-tabs">
+      <li role="presentation" class="active"><a href="#mac-instructions" aria-controls="mac-instructions" role="tab" data-toggle="tab">Mac</a></li>
+      <li role="presentation"><a href="#linux-instructions" aria-controls="linux-instructions" role="tab" data-toggle="tab">Linux</a></li>
+      <li role="presentation"><a href="#windows-instructions" aria-controls="windows-instructions" role="tab" data-toggle="tab">Windows</a></li>
+    </ul>
+    <div class="tab-content">
+      <div role="tabpanel" class="tab-pane active" id="mac-instructions">
+        <ol>
+          <li>Download your SSH key by clicking on "Download for Mac/Linux" on the left.</li>
+          <li>Open up a terminal. This will be in <b>Applications &gt; Utilities &gt; Terminal</b>.
+            <img src="{{static_prefix}}images/macos-terminal-launch.png" width="422" height="214">
+          </li>
+          <li>Locate the SSH private key file. This is usually <br>
+            <code>~/Downloads/{{user["EventId"]}}-private.pem</code></li>
+          <li>Make the SSH private key file unreadable by others:<br>
+            <code>chmod 600 ~/Downloads/{{user["EventId"]}}-private.pem</code>
+          </li>
+          <li>SSH into the host using this key and your username at the left:<br>
+            <code>ssh -i ~/Downloads/{{user["EventId"]}}-private.pem {{"lab%d" % user["UserId"]}}@
+              {%- if instance_info and instance_info["PublicIpAddress"] -%}
+                {{- instance_info["PublicIpAddress"] -}}
+              {%- else -%}
+                <em>a.b.c.d</em>
+              {%- endif -%}
+            </code>
+          </li>
+        </ol>
+      </div>
+      <div role="tabpanel" id="linux-instructions" class="tab-pane">
+        <ol>
+          <li>Download your SSH key by clicking on "Download for Mac/Linux" on the left.</li>
+          <li>Open up a terminal. On Ubuntu Linux, click on the Ubuntu logo in the upper left corner and search for "terminal". Click on the Terminal icon.
+            <img src="{{static_prefix}}images/ubuntu-terminal-launch.png" width="411" height="245">
+          </li>
+          <li>Locate the SSH private key file. This is usually<br>
+            <code>~/Downloads/{{user["EventId"]}}-private.pem</code></li>
+          <li>Make the SSH private key file unreadable by others:<br>
+            <code>chmod 600 ~/Downloads/{{user["EventId"]}}-private.pem</code>
+          </li>
+          <li>SSH into the host using this key and your username at the left:<br>
+            <code>ssh -i ~/Downloads/{{user["EventId"]}}-private.pem {{"lab%d" % user["UserId"]}}@
+              {%- if instance_info and instance_info["PublicIpAddress"] -%}
+                {{- instance_info["PublicIpAddress"] -}}
+              {%- else -%}
+                <em>a.b.c.d</em>
+              {%- endif -%}
+            </code>
+          </li>
+        </ol>
+      </div>
+      <div role="tabpanel" id="windows-instructions" class="tab-pane">
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock body_container %}

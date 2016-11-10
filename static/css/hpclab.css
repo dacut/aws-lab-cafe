@@ -1,17 +1,17 @@
 body {
-  padding-top: 70px;
+    padding-top: 70px;
 }
 
 .hint {
-  font-size: 70%;
+    font-size: 70%;
 }
 
 div.callout {
-  padding: 20px;
-  margin: 20px;
-  border: 1px solid #eee;
-  border-left-width: 10px;
-  border-radius: 3px;
+    padding: 20px;
+    margin: 20px;
+    border: 1px solid #eee;
+    border-left-width: 10px;
+    border-radius: 3px;
 }
 
 div.callout-error {
@@ -28,4 +28,8 @@ div.callout-info {
 
 th.instance-headers {
     width: 150px;
+}
+
+.right {
+    float: right !important;
 }

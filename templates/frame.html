@@ -27,19 +27,20 @@
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
             <li class="{% block navbar_home_class %}{% endblock %}"><a href="{% block navbar_home_link %}{{prefix}}{% endblock %}">Home</a></li>
-            <li class="{% block navbar_account_class %}{% endblock %} right">
-              {%- if request.user -%}
-              <li class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-                  {{- request.user["FullName"]|e -}} <span class="caret"></span></a>
-                <ul class="dropdown-menu">
-                  <li><a href="{{prefix}}account">Account settings</a></li>
-                  <li><a href="{{prefix}}logout">Logout</a></li>
-                </ul>
-              </li>
-              {%- else -%}
+          </ul>
+          <ul class="nav navbar-nav navbar-right">
+            <li class="{% block navbar_account_class %}{% endblock %}{% if request.user %} dropdown{% endif %}">
+              {% if request.user %}
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                {{- request.user["FullName"]|e -}} <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li><a href="{{prefix}}account">Account settings</a></li>
+                <li><a href="{{prefix}}logout">Logout</a></li>
+              </ul>
+              {% else %}
               <a href="{% block navbar_account_link %}{{prefix}}login{% endblock %}">Login</a></li>
-              {%- endif -%}
+              {% endif%}
+            </li>
           </ul>
         </div>
       </div>
