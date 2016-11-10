@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 
 # C extensions
+*.o
 *.so
 
 # Distribution / packaging
@@ -90,3 +91,15 @@ ENV/
 
 # SSL certificates and keys
 *.pem
+
+# PuTTY stuff
+.deps
+.dirstamp
+putty-*/Makefile
+config.status
+putty-*/plink
+putty-*/pscp
+putty-*/psftp
+putty-*/puttygen
+putty-*/stamp-h1
+putty-*/uxconfig.h
