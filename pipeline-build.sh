@@ -3,6 +3,8 @@ mkdir pipeline
 cp -a bin static templates appspec.yml hpclab.py hpclab*.cfg requirements.txt pipeline
 
 cd putty-0.67
+pwd
+ls
 chmod ugo+x ./configure
 ./configure
 make -j 4
