@@ -25,3 +25,7 @@ div.callout-warning {
 div.callout-info {
   border-left-color: #0000cc;
 }
+
+th.instance-headers {
+    width: 150px;
+}
