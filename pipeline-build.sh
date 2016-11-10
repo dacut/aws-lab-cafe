@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ex
 mkdir pipeline
 cp -a bin static templates appspec.yml hpclab.py hpclab*.cfg requirements.txt pipeline
 
