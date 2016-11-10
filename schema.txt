@@ -1,0 +1,18 @@
+HPCLab.Users
+  Email (HashKey)
+  EventId (RangeKey)
+  InstanceId (GSI)
+  PasswordHash
+  FullName
+  AllowContact
+  CreationDate
+  SSHPrivateKey
+  SSHPublicKey
+
+HPCLab.Instances
+  InstanceId (HashKey)
+  IsUnallocated (GSI: Binary, T/Not present)
+
+HPCLab.Events
+  EventId (HashKey)
+  EventName
