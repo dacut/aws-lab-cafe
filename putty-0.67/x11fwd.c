@@ -208,7 +208,7 @@ struct X11Display *x11_setup_display(char *display, Conf *conf)
      * Parse the display name.
      *
      * We expect this to have one of the following forms:
-     *
+     * 
      *  - the standard X format which looks like
      *    [ [ protocol '/' ] host ] ':' displaynumber [ '.' screennumber ]
      *    (X11 also permits a double colon to indicate DECnet, but
@@ -287,7 +287,7 @@ struct X11Display *x11_setup_display(char *display, Conf *conf)
 	disp->port = 6000 + disp->displaynum;
 	disp->addr = name_lookup(disp->hostname, disp->port,
 				 &disp->realhost, conf, ADDRTYPE_UNSPEC);
-
+    
 	if ((err = sk_addr_error(disp->addr)) != NULL) {
 	    sk_addr_free(disp->addr);
 	    sfree(disp->hostname);
@@ -420,7 +420,7 @@ static char *x11_verify(unsigned long peer_ip, int peer_port,
 	    if (data[i] != 0)	       /* zero padding wrong */
 		return "XDM-AUTHORIZATION-1 data failed check";
 	tim = time(NULL);
-	if (t - tim > XDM_MAXSKEW)
+	if (abs(t - tim) > XDM_MAXSKEW)
 	    return "XDM-AUTHORIZATION-1 time stamp was too far out";
 	seen = snew(struct XDMSeen);
 	seen->time = t;
@@ -490,7 +490,7 @@ void x11_get_auth_from_authfile(struct X11Display *disp,
 
     while (!ideal_match) {
 	int c, i, j, match = FALSE;
-
+	
 #define GET do { c = fgetc(authfp); if (c == EOF) goto done; c = (unsigned char)c; } while (0)
 	/* Expect a big-endian 2-byte number giving address family */
 	GET; family = c;
@@ -516,11 +516,11 @@ void x11_get_auth_from_authfile(struct X11Display *disp,
 	 *
 	 * The details we've just read should be interpreted as
 	 * follows:
-	 *
+	 * 
 	 *  - 'family' is the network address family used to
 	 *    connect to the display. 0 means IPv4; 6 means IPv6;
 	 *    256 means Unix-domain sockets.
-	 *
+	 * 
 	 *  - str[0] is the network address itself. For IPv4 and
 	 *    IPv6, this is a string of binary data of the
 	 *    appropriate length (respectively 4 and 16 bytes)
@@ -531,16 +531,16 @@ void x11_get_auth_from_authfile(struct X11Display *disp,
 	 *    .Xauthority file on a shared file system can contain
 	 *    authority entries for Unix-domain displays on
 	 *    several machines without them clashing).
-	 *
+	 * 
 	 *  - str[1] is the display number. I've no idea why
 	 *    .Xauthority stores this as a string when it has a
 	 *    perfectly good integer format, but there we go.
-	 *
+	 * 
 	 *  - str[2] is the authorisation method, encoded as its
 	 *    canonical string name (i.e. "MIT-MAGIC-COOKIE-1",
 	 *    "XDM-AUTHORIZATION-1" or something we don't
 	 *    recognise).
-	 *
+	 * 
 	 *  - str[3] is the actual authorisation data, stored in
 	 *    binary form.
 	 */
@@ -917,7 +917,7 @@ int x11_send(struct X11Connection *xconn, char *data, int len)
         sshfwd_x11_is_local(xconn->c);
         xconn->disp = auth_matched->disp;
         xconn->s = new_connection(sk_addr_dup(xconn->disp->addr),
-                                  xconn->disp->realhost, xconn->disp->port,
+                                  xconn->disp->realhost, xconn->disp->port, 
                                   0, 1, 0, 0, (Plug) xconn,
                                   sshfwd_get_conf(xconn->c));
         if ((err = sk_socket_error(xconn->s)) != NULL) {
@@ -950,7 +950,7 @@ int x11_send(struct X11Connection *xconn, char *data, int len)
                                      xconn->disp->localauthdatalen,
                                      new_peer_addr, new_peer_port,
                                      &greeting_len);
-
+        
         sk_write(xconn->s, greeting, greeting_len);
 
         smemclr(greeting, greeting_len);
