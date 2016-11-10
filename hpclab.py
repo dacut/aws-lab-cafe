@@ -10,10 +10,12 @@ from flask import (
     session, url_for,
 )
 from functools import wraps
-from httplib import BAD_REQUEST, FORBIDDEN, UNAUTHORIZED
+from httplib import BAD_REQUEST, FORBIDDEN, OK, UNAUTHORIZED
 from os import environ, urandom
 from passlib.hash import pbkdf2_sha512
 from six import text_type
+from subprocess import Popen, PIPE
+from tempfile import mkstemp
 from time import time
 from validate_email import validate_email
 
@@ -23,8 +25,9 @@ b3_session = Boto3Session(region_name="us-west-2")
 # DynamoDB table name prefix
 dynamodb_table_prefix = "HPCLab."
 
-# Handles to various AWS services; you shouldn't need to customize anything
-# below this line.
+# You shouldn't need to customize anything below this line.
+
+# Handles to various AWS services.
 dynamodb = b3_session.resource("dynamodb")
 ddb_events = dynamodb.Table(dynamodb_table_prefix + "Events")
 ddb_unallocinst = dynamodb.Table(dynamodb_table_prefix + "UnallocatedInstances")
@@ -41,8 +44,15 @@ invalid_password_hash = (
     "$8OJdNMyRfmUcLFTvK5bxxAy4Bal.X1r1J75VsW/DD4"
     "OmSXpbvYOERa4RBWSR0D2lch7sEU2wFtKfEl5IlUaQSQ")
 
+# The attributes on a user to return from DynamoDB (excludes HashedPassword)
+user_attributes = ",".join(
+    ["Email", "EventId", "InstanceId", "FullName", "AllowContact",
+     "CreationDate", "SSHPrivateKey", "SSHPublicKey", "UserId"]
+)
+
 app = Flask(__name__)
 if "HPCLAB_CONFIG" in environ:
+    print("Reading configuration from %s" % environ["HPCLAB_CONFIG"])
     app.config.from_envvar("HPCLAB_CONFIG")
 
 app.jinja_env.globals["static_prefix"] = "static/"
@@ -74,6 +84,15 @@ def is_valid_event_id(event_id):
 
     item = response.get("Item")
     return item is not None
+app.jinja_env.globals["is_valid_event_id"] = is_valid_event_id
+
+def get_instance_info(instance_id):
+    """
+    Return the public IP address for a given instance id.
+    """
+    response = ec2.describe_instances(InstanceIds=[instance_id])
+    return response["Reservations"][0]["Instances"][0]
+app.jinja_env.globals["get_instance_info"] = get_instance_info
 
 def get_user(email, event_id):
     """
@@ -82,7 +101,7 @@ def get_user(email, event_id):
     """
     response = ddb_users.get_item(
         Key={"Email": email, "EventId": event_id},
-        ProjectionExpression="FullName,InstanceId",
+        ProjectionExpression=user_attributes,
         ReturnConsumedCapacity="TOTAL",
     )
 
@@ -99,7 +118,7 @@ def login_user(email, password, event_id):
     """
     response = ddb_users.get_item(
         Key={"Email": email, "EventId": event_id},
-        ProjectionExpression="FullName,InstanceId,PasswordHash",
+        ProjectionExpression=(user_attributes + ",PasswordHash"),
         ReturnConsumedCapacity="TOTAL",
     )
 
@@ -121,23 +140,82 @@ def login_user(email, password, event_id):
 
     return item
 
+def generate_private_public_key(bits=2048):
+    """
+    generate_private_public_key(bits=2048) -> dict
+    Generate an OpenSSH private/public keypair.
+
+    The resulting dict has the form:
+        { "PrivateKey": private_key, "PublicKey": public_key }
+    """
+    if bits not in (1024, 2048, 4096):
+        raise ValueError("bits must be 1024, 2048, or 4096")
+
+    proc = Popen(["/usr/bin/openssl", "genrsa", str(bits)], stdin=PIPE,
+                 stdout=PIPE, stderr=PIPE)
+    private_key, err = proc.communicate()
+    if proc.returncode != 0:
+        raise RuntimeError("Failed to generate private key: %s" % err.strip())
+
+    proc = Popen(["/usr/bin/openssl", "rsa", "-inform", "PEM", "-pubout"],
+                 stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    public_key, err = proc.communicate(private_key)
+    if proc.returncode != 0:
+        raise RuntimeError("Failed to generate public key: %s" % err.strip())
+
+    return {"PrivateKey": private_key, "PublicKey": public_key}
+
 def register_user(email, password, event_id, full_name, allow_contact):
     """
     If the user does not already exist for this event, register him/her.
     """
     pwhash = pbkdf2_sha512.encrypt(password)
-    item = {
+    keys = generate_private_public_key()
+
+    user_item = {
         "Email": email,
         "EventId": event_id,
         "PasswordHash": pwhash,
         "FullName": full_name,
         "AllowContact": allow_contact,
         "CreationDate": int(time()),
+        "SSHPrivateKey": keys["PrivateKey"],
+        "SSHPublicKey": keys["PublicKey"],
     }
+
+    # Get the next user id.
+    while True:
+        event_item = ddb_events.get_item(
+            Key={"EventId": event_id},
+            ProjectionExpression="NextUID",
+            ReturnConsumedCapacity="TOTAL",
+        )["Item"]
+
+        user_id = event_item["NextUID"]
+
+        try:
+            ddb_events.update_item(
+                Key={"EventId": event_id},
+                UpdateExpression="SET NextUID = NextUID + :incr",
+                ConditionExpression="NextUID = :current_uid",
+                ExpressionAttributeValues={
+                    ":current_uid": user_id,
+                    ":incr": 1,
+                },
+                ReturnConsumedCapacity="TOTAL",
+            )
+            break
+        except ClientError as e:
+            error_code = (
+                getattr(e, "response", {}).get("Error", {}).get("Code", ""))
+            if error_code != u"ConditionalCheckFailedException":
+                raise
+
+            # Concurrent modification; try again.
 
     try:
         ddb_users.put_item(
-            Item=item,
+            Item=user_item,
             ConditionExpression="attribute_not_exists(EventId)",
             ReturnConsumedCapacity="TOTAL",
         )
@@ -150,8 +228,8 @@ def register_user(email, password, event_id, full_name, allow_contact):
 
     session["Email"] = email
     session["EventId"] = event_id
-    del item["PasswordHash"]
-    return item
+    del user_item["PasswordHash"]
+    return user_item
 
 # CSRF protection
 @app.before_request
@@ -194,6 +272,49 @@ def require_valid_session(f):
 @require_valid_session
 def index(**kw):
     return render_template("index.html", user=request.user)
+
+@app.route("/ssh-key", methods=["GET"])
+@require_valid_session
+def get_ssh_key(**kw):
+    format = request.args.get("format", "PEM")
+    priv_key = request.user["SSHPrivateKey"]
+    event_id = request.user["EventId"]
+
+    headers = {
+        "Cache-Control": "private"
+    }
+
+    if format == "PEM":
+        result = priv_key
+        headers["Content-Type"] = "application/x-pem-file"
+        headers["Content-Disposition"] = (
+            'attachment; filename="%s-private.pem"' % (event_id,))
+    elif format == "PPK":
+        # Convert this to a PuTTY PPK file using puttygen. Note that puttygen
+        # reopens the incoming PEM file, so /dev/stdin can't be used here.
+        puttygen = app.config.get("PUTTYGEN", "/usr/bin/puttygen")
+        temp_pem, temp_pem_filename = mkstemp(
+            suffix=".pem", prefix="privkey", text=True)
+        temp_pem.write(priv_key)
+        temp_pem.flush()
+        temp_pem.seek(0)
+
+        proc = Popen([puttygen, temp_pem, "-o", "/dev/stdout"], stdin=PIPE,
+                     stdout=PIPE, stderr=PIPE)
+        ppk, err = proc.communicate()
+        if proc.returncode != 0:
+            raise ValueError("puttygen failed to convert PEM file: %s" %
+                             err.strip())
+
+        temp_pem.close()
+        del temp_pem
+
+        result = ppk
+        headers["Content-Type"] = "application/octet-stream"
+        headers["Content-Disposition"] = 'attachment; filename="%s.ppk"' % (
+            event_id,)
+
+    return make_response((result, OK, headers))
 
 @app.route("/login", methods=["GET"])
 def login(**kw):

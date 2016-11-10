@@ -2,4 +2,49 @@
 {% block title %}Home{% endblock %}
 {% block navbar_home_class %}active{% endblock %}
 {% block navbar_home_link %}#{% endblock %}
-<h1>Home...</h1>
+{% block body_container %}
+<div class="row">
+  <div class="col-xs-12 col-sm-6">
+    <h2>Access Information</h2>
+    <table class="table">
+      {% set instance_id = user["InstanceId"] %}
+      {% if instance_id %}
+      {% set iinfo = get_instance_info(instance_id) %}
+      {% else %}
+      {% set iinfo = {} %}
+      {% endif %}
+      <tr>
+        <th>Instance ID</th>
+        <td>
+          {%- if instance_id -%}
+          {{- instance_id -}}
+          {%- else -%}
+          You don't have an instance assigned to you yet. <br>
+          <form name="launch-ec2" action="/launch-ec2" method="POST">
+            <div class="form-group">
+              <button type="submit" class="btn btn-success">Launch EC2 Instance</button>
+            </div>
+            <input type="hidden" name="_csrf_token" value="{{csrf_token()}}">
+          </form>
+          {%- endif -%}
+        </td>
+      </tr>
+      <tr>
+        <th>IP Address</th>
+        <td>{{iinfo["PublicIpAddress"]|e}}</td>
+      </tr>
+      <tr>
+        <th>Username</th>
+        <td>{{"lab%s" % user["UserId"]|e}}</td>
+      </tr>
+      <tr>
+        <th>SSH Private Key</th>
+        <td>
+          <a class="btn btn-primary" href="/ssh-key?format=PEM" role="button">Download for Mac/Linux</a><br>
+          <a class="btn btn-primary" href="/ssh-key?format=PPK" role="button">Download for Windows (PuTTY)</a><br>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+{% endblock body_container %}
