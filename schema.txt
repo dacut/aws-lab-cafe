@@ -8,6 +8,7 @@ HPCLab.Users
   CreationDate
   SSHPrivateKey
   SSHPublicKey
+  UserId
 
 HPCLab.Instances
   InstanceId (HashKey)
@@ -16,3 +17,10 @@ HPCLab.Instances
 HPCLab.Events
   EventId (HashKey)
   EventName
+  NextUID (Number)
+  AllowedSubnets (StringSet)
+  DefaultAMI
+  DefaultInstanceType
+  DefaultSecurityGroup
+  DefaultVolumeSize (Number)
+  EFSId
