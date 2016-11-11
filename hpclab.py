@@ -393,7 +393,8 @@ echo 'lab%(user_id)d ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 cat >> /home/lab%(user_id)d/.ssh/authorized_keys << .EOF
 %(public_key)s
 .EOF
-chmod -R 0600 /efshome/lab%(user_id)d/.ssh
+chmod 0700 /efshome/lab%(user_id)d/.ssh
+chmod 0600 /efshome/lab%(user_id)d/.ssh/authorized_keys
 chown -R lab%(user_id)d:lab%(user_id)d /efshome/lab%(user_id)d
 """ % {
     "az": az,
