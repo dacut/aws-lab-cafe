@@ -108,6 +108,73 @@
         </ol>
       </div>
       <div role="tabpanel" id="windows-instructions" class="tab-pane">
+        <nav aria-label="Page navigation">
+          <ul class="pagination">
+            <li role="presentation"><a href="#" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a></li>
+            <li role="presentation" class="active"><a href="#windows-1" aria-controls="windows-1" role="tab" data-toggle="tab">1</a></li>
+            <li role="presentation"><a href="#windows-2" aria-controls="windows-2" role="tab" data-toggle="tab">2</a></li>
+            <li role="presentation"><a href="#windows-3" aria-controls="windows-3" role="tab" data-toggle="tab">3</a></li>
+            <li role="presentation"><a href="#windows-4" aria-controls="windows-4" role="tab" data-toggle="tab">4</a></li>
+            <li role="presentation"><a href="#windows-5" aria-controls="windows-5" role="tab" data-toggle="tab">5</a></li>
+            <li role="presentation"><a href="#windows-6" aria-controls="windows-6" role="tab" data-toggle="tab">6</a></li>
+            <li><a href="#" aria-label="Next"><span aria-hidden="true">&raquo;</span></a></li>
+          </ul>
+        </nav>
+        <div class="tab-content">
+          <div role="tabpanel" class="tab-pane active" id="windows-1">
+            <ol>
+              <li>Download your SSH key by clicking on "Download for Windows/PuTTY" on the left.</li>
+              <li><a href="https://the.earth.li/~sgtatham/putty/latest/x86/putty.exe">Click here</a> to download the PuTTY executable.</li>
+              <li>Click on the download link to start PuTTY. If you see a security dialog, select "Open" or "Run".<br>
+                <img src="{{static_prefix}}images/windows-putty-launch-0.png" width="400" height="301">
+              </li>
+            </ol>
+          </div>
+          <div role="tabpanel" class="tab-pane" id="windows-2">
+            <ol start="4">
+              <li>In the <b>Basic options for your PuTTY session</b> pane, type the IP address from the left into the
+                <b>Host Name (or IP address)</b> text box:
+                {% if instance_info and instance_info["PublicIpAddress"] -%}<br><code>{{- instance_info["PublicIpAddress"] -}}</code>{%- endif %}
+                <img src="{{static_prefix}}images/windows-putty-launch-1.png" width="500" height="480">
+              </li>
+            </ol>
+          </div>
+          <div role="tabpanel" class="tab-pane" id="windows-3">
+            <ol start="5">
+              <li>In the <b>Category</b> pane in the <b>Connection</b> category, click on the <b>Data</b> subcategory.</li>
+              <li>In the <b>Data to send to the server</b> pane, type your username from the left into the <b>Auto-login username</b>
+                text box: <br>
+                <code>lab{{ user["UserId"] }}</code>
+                <img src="{{static_prefix}}images/windows-putty-launch-2.png" width="500" height="480">
+              </li>
+            </ol>
+          </div>
+          <div role="tabpanel" class="tab-pane" id="windows-4">
+            <ol start="7">
+              <li>In the <b>Category</b> pane in the <b>Connection</b> category, click on [+] symbol next to the <b>SSH</b> subcategory to
+                expand it.</li>
+              <li>In the <b>SSH</b> subcategory, click on the <b>Auth</b> sub-subcategory.</li>
+              <li>In the <b>Options controlling SSH authentication</b> pane, click on the <b>Browse</b> button.<br>
+                <img src="{{static_prefix}}images/windows-putty-launch-3.png" width="500" height="480">
+              </li>
+            </ol>
+          </div>
+          <div role="tabpanel" class="tab-pane" id="windows-5">
+            <ol start="10">
+              <li>In the file dialog, find the SSH key you downloaded in step 1. This will usually be in the <b>Downloads</b> folder and
+                will probably be named <code>{{ user["EventId"] }}.ppk</code><br>
+                <img src="{{static_prefix}}images/windows-putty-launch-4.png" width="600" height="462">
+              </li>
+            </ol>
+          </div>
+          <div role="tabpanel" class="tab-pane" id="windows-6">
+            <ol start="11">
+              <li>Click on <b>Open</b>. You should be logged in as shown below.<br>
+                <img src="{{static_prefix}}images/windows-putty-launch-5.png" width="600" height="377">
+              </li>
+            </ol>
+          </div>
+        </div>
       </div>
     </div>
   </div>
