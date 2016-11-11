@@ -378,6 +378,7 @@ def ec2_launch():
     user_info = """\
 #!/bin/bash
 yum install -y nfs-utils
+setsebool -P use_nfs_home_dirs 1 || true
 mkdir /efshome
 mount -t nfs4 \
 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 \
