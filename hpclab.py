@@ -580,7 +580,7 @@ def login_post(**kw):
             return redo(BAD_REQUEST)
 
         password_errors = []
-        if len(password) < 12:
+        if len(password) < 8:
             password_errors.append("Password is too short.")
 
         upper_seen = lower_seen = digit_seen = symbol_seen = False
@@ -596,8 +596,8 @@ def login_post(**kw):
             password_errors.append("Password does not contain a lowercase letter.")
         if not digit_seen:
             password_errors.append("Password does not contain a digit.")
-        if not symbol_seen:
-            password_errors.append("Password does not contain a symbol.")
+        #if not symbol_seen:
+        #    password_errors.append("Password does not contain a symbol.")
         try:
             if not password_errors:
                 VeryFascistCheck(password)
