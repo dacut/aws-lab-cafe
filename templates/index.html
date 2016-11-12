@@ -11,8 +11,22 @@
         <th class="instance-headers">Instance ID</th>
         <td>
           {%- if instance_id -%}
-          {{- instance_id -}}
+          {%- set instance_state = instance_info["State"]["Name"] -%}
+          {{- instance_id -}}<br>
+          <form name="stop-or-term-ec2" action="/ec2" method="POST" class="form-inline">
+            <div class="form-group">
+              <button type="submit" class="btn btn-success" name="Action" value="Start" {% if instance_state != "stopped" %}disabled{% endif %}>Start</button>
+            </div>
+            <div class="form-group">
+              <button type="submit" class="btn btn-warning" name="Action" value="Stop" {% if instance_state not in ("pending", "rebooting", "running") %}disabled{% endif %}>Stop</button>
+            </div>
+            <div class="form-group">
+              <button type="submit" class="btn btn-danger" name="Action" value="Terminate" {% if instance_state in ("shutting-down", "terminated") %}disabled{% endif %}>Terminate</button>
+            </div>
+            <input type="hidden" name="_csrf_token" value="{{csrf_token()}}">
+          </form>
           {%- else -%}
+          {%- set instance_state = none -%}
           You don't have an instance assigned to you. <br>
           <form name="launch-ec2" action="/ec2" method="POST">
             <div class="form-group">
@@ -31,12 +45,13 @@
       <tr>
         <th>Instance State</th>
         <td>
-          {%- if instance_info -%}
-          {{- instance_info["State"]["Name"]|e -}}
+          {%- if instance_state -%}
+          {{- instance_state|e -}}
           {%- if datetime.now(tzutc()) - instance_info["LaunchTime"] < timedelta(minutes=5) -%}
           <br><em>Your EC2 instance was recently launched and might still be bootstrapping; SSH might not yet be available.</em>
           {%- endif -%}
-          {%- endif -%}</td>
+          {%- endif -%}
+        </td>
       </tr>
       <tr>
         <th>Launch Time</th>

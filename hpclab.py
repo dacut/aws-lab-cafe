@@ -320,6 +320,12 @@ def ec2_post(**kw):
 
     if action == "Launch":
         return ec2_launch()
+    elif action == "Terminate":
+        return ec2_terminate()
+    elif action == "Start":
+        return ec2_start()
+    elif action == "Stop":
+        return ec2_stop()
 
     flash("<b>Invalid EC2 action: %s</b>" % action, category="error")
     return redirect("/")
@@ -481,6 +487,40 @@ chown -R lab%(user_id)d:lab%(user_id)d /efshome/lab%(user_id)d
     flash("<b>Failed to record instance launch:</b> %s" %
           escape(last_exception), category="error")
     return redirect("/")
+
+def ec2_terminate():
+    # Make sure the user has an EC2 instance.
+    instance_id = request.user.get("InstanceId")
+    if not instance_id:
+        flash("You do not have an EC2 instance assigned.", category="info")
+        return redirect("/")
+
+    ec2.terminate_instances(InstanceIds=[instance_id])
+    ec2_clear_user_instance()
+    return redirect("/")
+
+def ec2_start():
+    # Make sure the user has an EC2 instance.
+    instance_id = request.user.get("InstanceId")
+    if not instance_id:
+        flash("You do not have an EC2 instance assigned.", category="info")
+        return redirect("/")
+
+    ec2.start_instances(InstanceIds=[instance_id])
+    flash("Instance started.", category="info")
+    return redirect("/")
+
+def ec2_stop():
+    # Make sure the user has an EC2 instance.
+    instance_id = request.user.get("InstanceId")
+    if not instance_id:
+        flash("You do not have an EC2 instance assigned.", category="info")
+        return redirect("/")
+
+    ec2.stop_instances(InstanceIds=[instance_id])
+    flash("Instance stopped.", category="info")
+    return redirect("/")
+
 
 @app.route("/ssh-key", methods=["GET"])
 @require_valid_session
