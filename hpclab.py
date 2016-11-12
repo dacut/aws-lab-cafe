@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.7
 from __future__ import absolute_import, print_function
-from base64 import b64encode
+from base64 import b64decode, b64encode
 from botocore.exceptions import BotoCoreError, ClientError
 from boto3.session import Session as Boto3Session
 from cracklib import VeryFascistCheck
@@ -12,7 +12,7 @@ from flask import (
     session, url_for,
 )
 from functools import wraps
-from httplib import BAD_REQUEST, FORBIDDEN, OK, UNAUTHORIZED
+from httplib import BAD_REQUEST, FORBIDDEN, OK, SERVICE_UNAVAILABLE, UNAUTHORIZED
 from os import close, environ, fsync, urandom, write
 from passlib.hash import pbkdf2_sha512
 from random import randint
@@ -308,10 +308,37 @@ def index(**kw):
     else:
         instance_info = None
 
-
     return render_template(
         "index.html", user=request.user, instance_id=instance_id,
         instance_info=instance_info)
+
+@app.route("/screenshot", methods=["GET"])
+@require_valid_session
+def screenshot(**kw):
+    return render_template("screenshot.html", user=request.user)
+
+@app.route("/ec2/screenshot", methods=["GET"])
+@require_valid_session
+def ec2_screenshot(**kw):
+    instance_id = request.user.get("InstanceId")
+    if not instance_id:
+        return make_response(("You do not have an EC2 instance assigned.",
+                              BAD_REQUEST, {}))
+
+    response = ec2.get_console_screenshot(InstanceId=instance_id, WakeUp=True)
+    image_data = response.get("ImageData")
+    if not image_data:
+        return make_response(
+            ("No console screenshot returned.", SERVICE_UNAVAILABLE,
+             {"Content-Type": "text/plain"}))
+
+    image_data = b64decode(image_data)
+    return make_response((
+        image_data, OK,
+        {
+            "Cache-Control": "max-age=30",
+            "Content-Type": "image/jpeg"
+        }))
 
 @app.route("/ec2", methods=["POST"])
 @require_valid_session

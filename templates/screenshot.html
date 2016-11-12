@@ -1,0 +1,28 @@
+{% extends "frame.html" %}
+{% block title %}Console Screenshot{% endblock %}
+{% block navbar_screenshot_class %}active{% endblock %}
+{% block navbar_screenshot_link %}#{% endblock %}
+{% block body_container %}
+<div class="row">
+  <div class="col-sm-12 col-xs-12">
+    <a id="console-refresh" href="#"><span class="glyphicon glyphicon-refresh"></span>
+      <b id="refresh-text">Refresh console screenshot</b></a>
+    <div id="console-loading" class="hidden"><b>Loading console screenshot...</b></div>
+    <img id="screenshot" src="/ec2/screenshot">
+  </div>
+</div>
+{% endblock body_container %}
+{% block pagescripts %}
+<script type="text/javascript"><!--
+$("#console-refresh").click(function () {
+  $("#console-refresh").addClass("hidden");
+  $("#console-loading").removeClass("hidden");
+
+  var downloadingImage = $("<img>").attr("src", "{{prefix}}ec2/screenshot").on("load", function () {
+    $("#screenshot").attr("src", $(this).attr("src"));
+    $("#console-refresh").removeClass("hidden");
+    $("#console-loading").addClass("hidden");
+  });
+});
+--></script>
+{% endblock pagescripts %}

@@ -27,6 +27,7 @@
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
             <li class="{% block navbar_home_class %}{% endblock %}"><a href="{% block navbar_home_link %}{{prefix}}{% endblock %}">Home</a></li>
+            <li class="{% block navbar_screenshot_class %}{% endblock %}"><a href="{% block navbar_screenshot_link %}{{prefix}}screenshot{% endblock %}">Console Screenshot</a></li>
           </ul>
           <ul class="nav navbar-nav navbar-right">
             <li class="{% block navbar_account_class %}{% endblock %}{% if request.user %} dropdown{% endif %}">
@@ -71,5 +72,6 @@
     <script src="{{static_prefix}}js/underscore-min.js"></script>
     <script src="{{static_prefix}}js/pagination.js"></script>
     {% endblock bodytailscripts %}
+    {% block pagescripts %}{% endblock pagescripts %}
   </body>
 </html>
