@@ -326,6 +326,8 @@ def ec2_post(**kw):
         return ec2_start()
     elif action == "Stop":
         return ec2_stop()
+    elif action == "Reboot":
+        return ec2_reboot()
 
     flash("<b>Invalid EC2 action: %s</b>" % action, category="error")
     return redirect("/")
@@ -521,6 +523,19 @@ def ec2_stop():
     flash("Instance stopped.", category="info")
     return redirect("/")
 
+def ec2_reboot():
+    # Make sure the user has an EC2 instance.
+    instance_id = request.user.get("InstanceId")
+    if not instance_id:
+        flash("You do not have an EC2 instance assigned.", category="info")
+        return redirect("/")
+
+    ec2.reboot_instances(InstanceIds=[instance_id])
+    flash('Reboot signal sent to instance.<br><div class="hint">This is'
+          'equivalent to pressing Ctrl+Alt+Delete. If the instance hasn\'t '
+          'rebooted in four minutes, a hard reset will be issued.</div>',
+          category="info")
+    return redirect("/")
 
 @app.route("/ssh-key", methods=["GET"])
 @require_valid_session

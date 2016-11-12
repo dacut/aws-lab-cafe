@@ -21,6 +21,9 @@
               <button type="submit" class="btn btn-warning" name="Action" value="Stop" {% if instance_state not in ("pending", "rebooting", "running") %}disabled{% endif %}>Stop</button>
             </div>
             <div class="form-group">
+              <button type="submit" class="btn btn-warning" name="Action" value="Reboot" {% if instance_state != "running" %}disabled{% endif %}>Reboot</button>
+            </div>
+            <div class="form-group">
               <button type="submit" class="btn btn-danger" name="Action" value="Terminate" {% if instance_state in ("shutting-down", "terminated") %}disabled{% endif %}>Terminate</button>
             </div>
             <input type="hidden" name="_csrf_token" value="{{csrf_token()}}">
