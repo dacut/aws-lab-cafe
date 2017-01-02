@@ -1,4 +1,4 @@
-HPCLab.Users
+{Prefix}Users
   Email (HashKey)
   EventId (RangeKey)
   InstanceId (GSI)
@@ -10,11 +10,11 @@ HPCLab.Users
   SSHPublicKey
   UserId
 
-HPCLab.Instances
+{Prefix}Instances
   InstanceId (HashKey)
   IsUnallocated (GSI: Binary, T/Not present)
 
-HPCLab.Events
+{Prefix}Events
   EventId (HashKey)
   EventName
   NextUID (Number)
