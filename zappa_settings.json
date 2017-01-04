@@ -1,10 +1,10 @@
 {
     "dev": {
-        "app_function": "hpclab.app",
+        "app_function": "labcafe.app",
         "aws_region": "us-west-2",
-        "delete_local_zip": true,
-        "delete_s3_zip": true,
-        "profile_name": "scilab",
-        "s3_bucket": "zappa-hpc-lab-maker"
+        "delete_local_zip": false,
+        "delete_s3_zip": false,
+        "s3_bucket": "zappa-a8955bf6-a1d5-481a-998d-8686babdce13",
+        "use_precompiled_packages": false
     }
 }

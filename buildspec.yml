@@ -16,7 +16,7 @@ phases:
   post_build:
     commands:
       - rm -f aws-lab-cafe.zip
-      - zip aws-lab-cafe.zip ./labcafe.pyc ./labcafe.py
+      - zip aws-lab-cafe.zip ./labcafe.pyc ./labcafe.py ./zappa_settings.json
       - zip aws-lab-cafe.zip venv/lib/python2.7/site-packages
 
 artifacts:
