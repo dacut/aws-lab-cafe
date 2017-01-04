@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: "AWS::Serverless-2016-10-31"
-Decription: "AWS Lab Cafe -- allow students in a lab to deploy EC2 instances without having to know about AWS."
+Description: "AWS Lab Cafe -- allow students in a lab to deploy EC2 instances without having to know about AWS."
 Parameters:
   DynamoDBTablePrefix:
     Type: String
