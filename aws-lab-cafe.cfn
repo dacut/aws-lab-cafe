@@ -22,7 +22,7 @@ Parameters:
     Default: 512
     Description: The amount of memory (MB) available to the Lambda function.
     AllowedValues: [128, 192, 256, 320, 384, 448, 512, 576, 640, 704, 768, 832,
-      896, 960, 1024, 1088, 1152, 1216, 1280, 1344, 1408, 1472, 1536
+      896, 960, 1024, 1088, 1152, 1216, 1280, 1344, 1408, 1472, 1536]
     ConstraintDescription: Must be from 128-1536 MB in multiples of 64 MB.
   EventTableReadCapacityUnits:
     Type: Number
@@ -84,7 +84,7 @@ Resources:
     Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17",
+        Version: "2012-10-17"
         Statement:
           -
             Effect: Allow
