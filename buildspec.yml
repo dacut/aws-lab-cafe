@@ -27,3 +27,4 @@ artifacts:
   type: zip
   files:
     - aws-lab-cafe-post.cfn
+    - aws-lab-cafe-test.json
