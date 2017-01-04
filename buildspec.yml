@@ -3,6 +3,7 @@ version: 0.1
 phases:
   install:
     commands:
+      - yum install -y binutils gcc python27-devel
       - python2.7 ./get-pip.py
       - pip install virtualenv
   pre_build:
