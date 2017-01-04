@@ -19,8 +19,11 @@ phases:
       - rm -f aws-lab-cafe.zip
       - zip aws-lab-cafe.zip ./labcafe.pyc ./labcafe.py ./zappa_settings.json
       - zip aws-lab-cafe.zip venv/lib/python2.7/site-packages
-
+      - aws cloudformation package \
+        --template-file aws-lab-cafe.cfn \
+        --s3-bucket cuthbert-labcafe-artifacts \
+        --output-template-file aws-lab-cafe-post.cfn
 artifacts:
+  type: zip
   files:
-    - aws-lab-cafe.zip
-    - aws-lab-cafe.cfn
+    - aws-lab-cafe-post.cfn
