@@ -18,7 +18,9 @@ phases:
     commands:
       - rm -f aws-lab-cafe.zip
       - zip aws-lab-cafe.zip ./labcafe.pyc ./labcafe.py ./zappa_settings.json
-      - zip aws-lab-cafe.zip venv/lib/python2.7/site-packages
+      - ls -l
+      - ls -l venv/
+      - cd venv/lib/python2.7/site-packages && zip ../../../../aws-lab-cafe.zip venv/lib/python2.7/site-packages
       - aws s3 cp aws-lab-cafe.zip s3://cuthbert-labcafe-artifacts
 artifacts:
   type: zip
