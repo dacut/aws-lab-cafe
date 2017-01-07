@@ -113,7 +113,9 @@ Resources:
   LambdaFunction:
     Type: "AWS::Lambda::Function"
     Properties:
-      Code: aws-lab-cafe.zip
+      Code:
+        S3Bucket: cuthbert-labcafe-artifacts
+        S3Key: aws-lab-cafe.zip
       Environment:
         Variables:
           LABCAFE_TABLE_PREFIX: !Ref DynamoDBTablePrefix
