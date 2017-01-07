@@ -5,4 +5,5 @@ pwd
 cd venv/lib/python2.7/site-packages
 ls -l
 zip -u -r ../../../../aws-lab-cafe.zip .
+cd ../../../..
 aws s3 cp aws-lab-cafe.zip s3://cuthbert-labcafe-artifacts
