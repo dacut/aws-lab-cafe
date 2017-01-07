@@ -69,7 +69,29 @@ Resources:
   Api:
     Type: "AWS::ApiGateway::RestApi"
     Properties:
-      Description: AWS Lab Cafe HTTP endpoint.
+      Body:
+        swagger: "2.0"
+        info:
+          title: AWS Lab Cafe
+          description: AWS Lab Cafe HTTP HTML endpoint.
+          version: "0.1"
+        schemes:
+          - http
+          - https
+        consumes:
+          - "application/x-www-form-urlencoded"
+          - "multipart/form-data"
+        produces:
+          - "text/html"
+        paths:
+          "/":
+            get:
+              produces:
+                - "text/html"
+              responses:
+                "200":
+                  description: Landing page
+      Description: AWS Lab Cafe HTTP HTML endpoint.
       Name: LabCafe
   ApiRootMethod:
     Type: "AWS::ApiGateway::Method"
