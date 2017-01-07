@@ -7,7 +7,7 @@ from cracklib import VeryFascistCheck
 from cStringIO import StringIO
 from datetime import datetime, timedelta
 from dateutil.tz import tzutc
-from distutil.util import strtobool
+from distutils.util import strtobool
 from flask import (
     escape, flash, Flask, g, make_response, redirect, render_template, request,
     session, url_for,
