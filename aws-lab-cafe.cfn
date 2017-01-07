@@ -84,7 +84,7 @@ Resources:
       ResourceId: !GetAtt Api.RootResourceId
       RestApiId: !Ref Api
   ApiDeployment:
-    Type: "AWS::ApiGateway::Stage"
+    Type: "AWS::ApiGateway::Deployment"
     Properties:
       RestApiId: !Ref Api
       StageName: Development
