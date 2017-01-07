@@ -95,7 +95,7 @@ Resources:
     Properties:
       Code:
         S3Bucket: cuthbert-labcafe-artifacts
-        S3Key: aws-lab-cafe.zip
+        S3Key: aws-lab-cafe-@@DATETIME@@.zip
       Description: AWS Lab Cafe webserver.
       Environment:
         Variables:
