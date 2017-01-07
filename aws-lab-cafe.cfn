@@ -66,6 +66,28 @@ Metadata:
       Parameters:
         - EnableDebug
 Resources:
+  Api:
+    Type: "AWS::ApiGateway::RestApi"
+    Properties:
+      Description: AWS Lab Cafe HTTP endpoint.
+      Name: LabCafe
+  ApiRootMethod:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      HttpMethod: ANY
+      Integration:
+        Credentials: !GetAtt ApiGatewayRole.Arn
+        IntegrationHttpMethod: ANY
+        Type: AWS
+        Uri: !GetAtt LambdaFunction.Arn
+      Resource: !GetAtt Api.RootResourceId
+  ApiDeployment:
+    Type: "AWS::ApiGateway::Stage"
+    Properties:
+      RestApiId: !Ref Api
+      StageName: Development
+    DependsOn:
+      - ApiRootMethod
   LambdaFunction:
     Type: "AWS::Lambda::Function"
     Properties:
@@ -78,6 +100,27 @@ Resources:
       Handler: "labcafe.lambda_handler"
       Role: !GetAtt LambdaRole.Arn
       Runtime: python2.7
+  ApiGatewayRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+               Service: "lambda.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Policies:
+        -
+          PolicyName: LambdaFunctionAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt LambdaFunction.Arn
   LambdaRole:
     Type: "AWS::IAM::Role"
     Properties:
