@@ -80,7 +80,7 @@ Resources:
         Credentials: !GetAtt ApiGatewayRole.Arn
         IntegrationHttpMethod: ANY
         Type: AWS
-        Uri: !GetAtt LambdaFunction.Arn
+        Uri: !Join ["", ["arn:aws:apigateway:", !Ref "AWS::Region", "lambda:path/2015-03-31/functions/", !GetAtt LambdaFunction.Arn]]
       ResourceId: !GetAtt Api.RootResourceId
       RestApiId: !Ref Api
   ApiDeployment:
@@ -155,8 +155,8 @@ Resources:
                   - dynamodb:Scan
                   - dynamodb:UpdateItem
                 Resource:
-                  - !Join ["", [ "arn:aws:dynamodb:", !Ref "AWS::Region", ":", !Ref "AWS::AccountId", ":table/", !Ref DynamoDBTablePrefix, "Events" ]]
-                  - !Join ["", [ "arn:aws:dynamodb:", !Ref "AWS::Region", ":", !Ref "AWS::AccountId", ":table/", !Ref DynamoDBTablePrefix, "Users" ]]
+                  - !Join ["", ["arn:aws:dynamodb:", !Ref "AWS::Region", ":", !Ref "AWS::AccountId", ":table/", !Ref DynamoDBTablePrefix, "Events"]]
+                  - !Join ["", ["arn:aws:dynamodb:", !Ref "AWS::Region", ":", !Ref "AWS::AccountId", ":table/", !Ref DynamoDBTablePrefix, "Users"]]
         -
           PolicyName: EC2Access
           PolicyDocument:
