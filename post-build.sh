@@ -2,7 +2,7 @@
 TZ=UTC; export TZ
 DATETIME=$(date +'%Y%m%dT%H%M%SZ')
 # Add our app.
-zip -q aws-lab-cafe-${DATETIME}.zip ./labcafe.pyc ./labcafe.py ./zappa_settings.json
+zip -q aws-lab-cafe-${DATETIME}.zip ./labcafe.py ./importtest.py ./zappa_settings.json
 
 
 # Add site-packages to the root of the Lambda bundle.
@@ -10,6 +10,14 @@ cd venv/lib/python2.7/site-packages
 
 # Copy cracklib libraries to the site-packages directory
 cp -p /usr/lib64/libcrack* .
+
+# Remove OpenCV from lambda-packages (too big)
+rm -r lambda_packages/OpenCV
+
+# Remove botocore, boto3, and jmespath; they're included
+rm -rf botocore* boto3* jmespath*
+
+# Add site-packages to the bundle
 zip -q -u -r ../../../../aws-lab-cafe-${DATETIME}.zip .
 
 # Upload the Lambda bundle to S3.

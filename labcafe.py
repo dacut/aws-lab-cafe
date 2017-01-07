@@ -723,3 +723,11 @@ def logout(**kw):
     if session.modified:
         flash("<b>You have been logged out.</b>", category="info")
     return redirect("/login")
+
+def handler(*args, **kw):
+    try:
+        return lambda_handler(*args, **kw)
+    except Exception as e:
+        from traceback import print_exc
+        print_exc()
+        raise
