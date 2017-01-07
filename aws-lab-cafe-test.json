@@ -2,6 +2,7 @@
     "Parameters": {
         "DynamoDBTablePrefix": "LabCafe.",
         "EnableDebug": "true",
+        "LambdaFunctionName": "AWSLabCafe",
         "LambdaMemorySize": "512",
         "EventTableReadCapacityUnits": "5",
         "EventTableWriteCapacityUnits": "1",

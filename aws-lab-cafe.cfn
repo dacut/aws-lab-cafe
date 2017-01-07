@@ -1,5 +1,4 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Transform: "AWS::Serverless-2016-10-31"
 Description: "AWS Lab Cafe -- allow students in a lab to deploy EC2 instances without having to know about AWS."
 Parameters:
   DynamoDBTablePrefix:
@@ -13,6 +12,10 @@ Parameters:
     AllowedValues:
       - false
       - true
+  LambdaFunctionName:
+    Type: String
+    Default: AWSLabCafe
+    Description: The name of the Lambda function to create to serve the website.
   LambdaMemorySize:
     Type: Number
     Default: 512
@@ -64,14 +67,14 @@ Metadata:
         - EnableDebug
 Resources:
   LambdaFunction:
-    Type: "AWS::Serverless::Function"
+    Type: "AWS::Lambda::Function"
     Properties:
-      CodeUri: aws-lab-cafe.zip
-      Description: AWS Lab Cafe website handler.
+      Code: aws-lab-cafe.zip
       Environment:
         Variables:
           LABCAFE_TABLE_PREFIX: !Ref DynamoDBTablePrefix
           DEBUG: !Ref EnableDebug
+      FunctionName: !Ref LambdaFunctionName
       Handler: "labcafe.lambda_handler"
       Role: !GetAtt LambdaRole.Arn
       Runtime: python2.7
