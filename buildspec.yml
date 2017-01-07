@@ -10,7 +10,7 @@ phases:
     commands:
       - virtualenv venv
       - source venv/bin/activate && env && pip install -r requirements.txt
-      - ls -lR venv
+      - ls -l venv/lib/python2.7/site-packages
   build:
     commands:
       - source venv/bin/activate && python -m py_compile ./labcafe.py
@@ -19,7 +19,10 @@ phases:
       - rm -f aws-lab-cafe.zip
       - zip aws-lab-cafe.zip ./labcafe.pyc ./labcafe.py ./zappa_settings.json
       - ls -l
-      - ls -lR venv
+      - ls -l venv/lib/python2.7/site-packages
+      - pwd
+      - cd venv/lib/python2.7/site-packages
+      - pwd
       - cd venv/lib/python2.7/site-packages && zip -u ../../../../aws-lab-cafe.zip .
       - aws s3 cp aws-lab-cafe.zip s3://cuthbert-labcafe-artifacts
 artifacts:
