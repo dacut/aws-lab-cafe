@@ -71,25 +71,25 @@ Resources:
     Properties:
       Description: AWS Lab Cafe HTTP HTML endpoint.
       Name: LabCafe
-  ApiRootMethod:
-    Type: "AWS::ApiGateway::Method"
-    Properties:
-      AuthorizationType: NONE
-      HttpMethod: ANY
-      Integration:
-        Credentials: !GetAtt ApiGatewayRole.Arn
-        IntegrationHttpMethod: ANY
-        Type: AWS
-        Uri: !Join ["", ["arn:aws:apigateway:", !Ref "AWS::Region", "lambda:path/2015-03-31/functions/", !GetAtt LambdaFunction.Arn]]
-      ResourceId: !GetAtt Api.RootResourceId
-      RestApiId: !Ref Api
-  ApiDeployment:
-    Type: "AWS::ApiGateway::Stage"
-    Properties:
-      RestApiId: !Ref Api
-      StageName: Development
-    DependsOn:
-      - ApiRootMethod
+  # ApiRootMethod:
+  #   Type: "AWS::ApiGateway::Method"
+  #   Properties:
+  #     AuthorizationType: NONE
+  #     HttpMethod: ANY
+  #     Integration:
+  #       Credentials: !GetAtt ApiGatewayRole.Arn
+  #       IntegrationHttpMethod: ANY
+  #       Type: AWS
+  #       Uri: !Join ["", ["arn:aws:apigateway:", !Ref "AWS::Region", "lambda:path/2015-03-31/functions/", !GetAtt LambdaFunction.Arn]]
+  #     ResourceId: !GetAtt Api.RootResourceId
+  #     RestApiId: !Ref Api
+  # ApiDeployment:
+  #   Type: "AWS::ApiGateway::Stage"
+  #   Properties:
+  #     RestApiId: !Ref Api
+  #     StageName: Development
+  #   DependsOn:
+  #     - ApiRootMethod
   LambdaFunction:
     Type: "AWS::Lambda::Function"
     Properties:
@@ -211,3 +211,6 @@ Resources:
         ReadCapacityUnits: !Ref UserTableReadCapacityUnits
         WriteCapacityUnits: !Ref UserTableWriteCapacityUnits
       TableName: !Join ["", [ !Ref DynamoDBTablePrefix , "Users"]]
+Outputs:
+  LambdaARN:
+    Value: !GetAtt LambdaFunction.Arn
