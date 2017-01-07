@@ -113,7 +113,7 @@ Resources:
           -
             Effect: Allow
             Principal:
-               Service: "lambda.amazonaws.com"
+               Service: "apigateway.amazonaws.com"
             Action: "sts:AssumeRole"
       Policies:
         -
