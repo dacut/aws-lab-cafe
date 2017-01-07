@@ -80,7 +80,7 @@ Resources:
         Credentials: !GetAtt ApiGatewayRole.Arn
         IntegrationHttpMethod: ANY
         Type: AWS
-        Uri: !Join ["", ["arn:aws:apigateway:", !Ref "AWS::Region", "lambda:path/2015-03-31/functions/", !GetAtt LambdaFunction.Arn, "/invocations"]]
+        Uri: !Join ["", ["arn:aws:apigateway:", !Ref "AWS::Region", ":lambda:path/2015-03-31/functions/", !GetAtt LambdaFunction.Arn, "/invocations"]]
       ResourceId: !GetAtt Api.RootResourceId
       RestApiId: !Ref Api
   # ApiDeployment:
