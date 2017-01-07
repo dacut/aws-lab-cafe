@@ -96,14 +96,17 @@ Resources:
       Code:
         S3Bucket: cuthbert-labcafe-artifacts
         S3Key: aws-lab-cafe.zip
+      Description: AWS Lab Cafe webserver.
       Environment:
         Variables:
           LABCAFE_TABLE_PREFIX: !Ref DynamoDBTablePrefix
           DEBUG: !Ref EnableDebug
       FunctionName: !Ref LambdaFunctionName
       Handler: "labcafe.lambda_handler"
+      MemorySize: !Ref LambdaMemorySize
       Role: !GetAtt LambdaRole.Arn
       Runtime: python2.7
+      Timeout: 20
   ApiGatewayRole:
     Type: "AWS::IAM::Role"
     Properties:
