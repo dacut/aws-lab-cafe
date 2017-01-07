@@ -1,16 +1,16 @@
 version: 0.1
 
 phases:
-  install:
-    commands:
-      - yum install -y binutils cracklib-devel gcc python27-devel zip
-      - python2.7 ./get-pip.py
-      - pip install awscli virtualenv
-  pre_build:
-    commands:
-      - virtualenv venv
-      - source venv/bin/activate
-      - pip install -r requirements.txt
+  # install:
+  #   commands:
+  #     - yum install -y binutils cracklib-devel gcc python27-devel zip
+  #     - python2.7 ./get-pip.py
+  #     - pip install awscli virtualenv
+  # pre_build:
+  #   commands:
+  #     - virtualenv venv
+  #     - source venv/bin/activate && env
+  #     - pip install -r requirements.txt
   build:
     commands:
       - python -m py_compile ./labcafe.py
