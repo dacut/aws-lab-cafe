@@ -78,7 +78,7 @@ Resources:
       HttpMethod: ANY
       Integration:
         Credentials: !GetAtt ApiGatewayRole.Arn
-        IntegrationHttpMethod: ANY
+        IntegrationHttpMethod: POST
         Type: AWS_PROXY
         Uri: !Join ["", ["arn:aws:apigateway:", !Ref "AWS::Region", ":lambda:path/2015-03-31/functions/", !GetAtt LambdaFunction.Arn, "/invocations"]]
       ResourceId: !GetAtt Api.RootResourceId
