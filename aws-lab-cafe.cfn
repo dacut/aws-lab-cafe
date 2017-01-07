@@ -74,6 +74,7 @@ Resources:
   ApiRootMethod:
     Type: "AWS::ApiGateway::Method"
     Properties:
+      AuthorizationType: NONE
       HttpMethod: ANY
       Integration:
         Credentials: !GetAtt ApiGatewayRole.Arn
