@@ -16,15 +16,8 @@ phases:
       - source venv/bin/activate && python -m py_compile ./labcafe.py
   post_build:
     commands:
-      - rm -f aws-lab-cafe.zip
-      - zip aws-lab-cafe.zip ./labcafe.pyc ./labcafe.py ./zappa_settings.json
-      - ls -l
-      - ls -l venv/lib/python2.7/site-packages
-      - pwd
-      - cd venv/lib/python2.7/site-packages
-      - pwd
-      - cd venv/lib/python2.7/site-packages && zip -u ../../../../aws-lab-cafe.zip .
-      - aws s3 cp aws-lab-cafe.zip s3://cuthbert-labcafe-artifacts
+      - chmod a+x ./post-build.sh
+      - ./post-build.sh
 artifacts:
   type: zip
   files:
