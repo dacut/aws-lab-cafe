@@ -71,18 +71,18 @@ Resources:
     Properties:
       Description: AWS Lab Cafe HTTP HTML endpoint.
       Name: LabCafe
-  # ApiRootMethod:
-  #   Type: "AWS::ApiGateway::Method"
-  #   Properties:
-  #     AuthorizationType: NONE
-  #     HttpMethod: ANY
-  #     Integration:
-  #       Credentials: !GetAtt ApiGatewayRole.Arn
-  #       IntegrationHttpMethod: ANY
-  #       Type: AWS
-  #       Uri: !Join ["", ["arn:aws:apigateway:", !Ref "AWS::Region", "lambda:path/2015-03-31/functions/", !GetAtt LambdaFunction.Arn]]
-  #     ResourceId: !GetAtt Api.RootResourceId
-  #     RestApiId: !Ref Api
+  ApiRootMethod:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: ANY
+      Integration:
+        Credentials: !GetAtt ApiGatewayRole.Arn
+        IntegrationHttpMethod: ANY
+        Type: AWS
+        Uri: !Join ["", ["arn:aws:apigateway:", !Ref "AWS::Region", "lambda:path/2015-03-31/functions/", !GetAtt LambdaFunction.Arn, "/invocations"]]
+      ResourceId: !GetAtt Api.RootResourceId
+      RestApiId: !Ref Api
   # ApiDeployment:
   #   Type: "AWS::ApiGateway::Stage"
   #   Properties:
