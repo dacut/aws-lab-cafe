@@ -80,7 +80,8 @@ Resources:
         IntegrationHttpMethod: ANY
         Type: AWS
         Uri: !GetAtt LambdaFunction.Arn
-      Resource: !GetAtt Api.RootResourceId
+      ResourceId: !GetAtt Api.RootResourceId
+      RestApiId: !Ref Api
   ApiDeployment:
     Type: "AWS::ApiGateway::Stage"
     Properties:
