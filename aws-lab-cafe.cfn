@@ -83,13 +83,13 @@ Resources:
         Uri: !Join ["", ["arn:aws:apigateway:", !Ref "AWS::Region", ":lambda:path/2015-03-31/functions/", !GetAtt LambdaFunction.Arn, "/invocations"]]
       ResourceId: !GetAtt Api.RootResourceId
       RestApiId: !Ref Api
-  # ApiDeployment:
-  #   Type: "AWS::ApiGateway::Stage"
-  #   Properties:
-  #     RestApiId: !Ref Api
-  #     StageName: Development
-  #   DependsOn:
-  #     - ApiRootMethod
+  ApiDeployment:
+    Type: "AWS::ApiGateway::Stage"
+    Properties:
+      RestApiId: !Ref Api
+      StageName: Development
+    DependsOn:
+      - ApiRootMethod
   LambdaFunction:
     Type: "AWS::Lambda::Function"
     Properties:
