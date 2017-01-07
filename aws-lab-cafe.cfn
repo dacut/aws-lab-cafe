@@ -13,10 +13,6 @@ Parameters:
     AllowedValues:
       - false
       - true
-  LambdaFunctionName:
-    Type: String
-    Default: AWSLabCafe
-    Description: The name of the Lambda function to create to serve the website.
   LambdaMemorySize:
     Type: Number
     Default: 512
@@ -68,14 +64,14 @@ Metadata:
         - EnableDebug
 Resources:
   LambdaFunction:
-    Type: "AWS::Lambda::Function"
+    Type: "AWS::Serverless::Function"
     Properties:
-      Code: aws-lab-cafe.zip
+      CodeUri: aws-lab-cafe.zip
+      Description: AWS Lab Cafe website handler.
       Environment:
         Variables:
           LABCAFE_TABLE_PREFIX: !Ref DynamoDBTablePrefix
           DEBUG: !Ref EnableDebug
-      FunctionName: !Ref LambdaFunctionName
       Handler: "labcafe.lambda_handler"
       Role: !GetAtt LambdaRole.Arn
       Runtime: python2.7
