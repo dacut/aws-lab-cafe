@@ -110,8 +110,8 @@ Resources:
                   - dynamodb:Scan
                   - dynamodb:UpdateItem
                 Resource:
-                  - !Ref EventsTable
-                  - !Ref UsersTable
+                  - !Join ["", [ "arn:aws:dynamodb:", !Ref "AWS::Region", ":", !Ref "AWS::AccountId", ":table/", !Ref DynamoDBTablePrefix, "Events" ]]
+                  - !Join ["", [ "arn:aws:dynamodb:", !Ref "AWS::Region", ":", !Ref "AWS::AccountId", ":table/", !Ref DynamoDBTablePrefix, "Users" ]]
         -
           PolicyName: EC2Access
           PolicyDocument:
