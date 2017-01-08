@@ -125,7 +125,7 @@ Resources:
               AWS: !Join ["", ["arn:aws:iam::", !Ref "AWS::AccountId", ":root"]]
             Action:
               - "kms:*"
-            Resource: *
+            Resource: "*"
           -
             Sid: Allow encryption/decryption
             Effect: Allow
@@ -136,8 +136,8 @@ Resources:
               - kms:DescribeKey
               - kms:Encrypt
               - kms:GenerateDataKey
-              - kms:ReEncrypt*
-            Resource: *
+              - "kms:ReEncrypt*"
+            Resource: "*"
   ApiGatewayRole:
     Type: "AWS::IAM::Role"
     Properties:
