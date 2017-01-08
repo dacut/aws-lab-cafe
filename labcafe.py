@@ -37,7 +37,6 @@ b3 = Boto3Session()
 ddb = b3.resource("dynamodb")
 ddb_table_prefix = environ.get("LABCAFE_TABLE_PREFIX", "LabCafe.")
 ddb_events = ddb.Table(ddb_table_prefix + "Events")
-ddb_unallocinst = ddb.Table(ddb_table_prefix + "UnallocatedInstances")
 ddb_users = ddb.Table(ddb_table_prefix + "Users")
 ec2 = b3.client("ec2")
 efs = b3.client("efs")
@@ -66,12 +65,18 @@ app.config["DEBUG"] = strtobool(
 app.config["TEMPLATES_AUTO_RELOAD"] = strtobool(
     environ.get("TEMPLATES_AUTO_RELOAD", "False"))
 
-# Get the shared secret we use to encrypt session cookies.
-if "SECRET_KEY" not in environ:
-    print("FATAL: Lambda function does not have a SECRET_KEY environment "
-          "variable.", file=stderr)
-    exit(1)
-app.config["SECRET_KEY"] = environ["SECRET_KEY"]
+# Attempt to generate a secret key.
+secret_key = urandom(18)
+
+# Write this out *only if* nobody else has updated it in the meantime.
+result = ddb_events.update_item(
+    Key={"EventId": "_"},
+    UpdateExpression="SET SecretKey = if_not_exists(SecretKey, :new_secret_key)",
+    ExpressionAttributeValues={":new_secret_key": b64encode(secret_key)},
+    ReturnValues="ALL_NEW")
+
+# Always retrieve the value from DyanmoDB, not our generated one.
+app.config["SECRET_KEY"] = b64decode(result["Attributes"]["SecretKey"])
 
 # Items required by the Jijna templates
 app.jinja_env.globals["static_prefix"] = "static/"
