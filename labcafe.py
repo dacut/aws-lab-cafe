@@ -27,6 +27,11 @@ from time import time
 from validate_email import validate_email
 from zappa.handler import lambda_handler
 
+if "ENCRYPTION_KEY_ID" not in environ:
+    print("FATAL: ENCRYPTION_KEY_ID environment variable must be set.",
+          file=stderr)
+    exit(1)
+
 # Number of API retries
 n_retries = 5
 
@@ -64,19 +69,66 @@ app.config["DEBUG"] = strtobool(
     environ.get("DEBUG", "False"))
 app.config["TEMPLATES_AUTO_RELOAD"] = strtobool(
     environ.get("TEMPLATES_AUTO_RELOAD", "False"))
+app.config["ENCRYPTION_KEY_ID"] = environ["ENCRYPTION_KEY_ID"]
 
-# Attempt to generate a secret key.
-secret_key = urandom(18)
+def set_secret_key(app):
+    """
+    set_secret_key(app)
 
-# Write this out *only if* nobody else has updated it in the meantime.
-result = ddb_events.update_item(
-    Key={"EventId": "_"},
-    UpdateExpression="SET SecretKey = if_not_exists(SecretKey, :new_secret_key)",
-    ExpressionAttributeValues={":new_secret_key": b64encode(secret_key)},
-    ReturnValues="ALL_NEW")
+    Set the SECRET_KEY field of the Flask app config using the value stored in
+    DynamoDB.
+    """
+    encryption_context = {
+        "Application": "AWSLabCafe",
+        "LambdaFunctionName": environ.get("AWS_LAMBA_FUNCTION_NAME", "")
+    }
 
-# Always retrieve the value from DyanmoDB, not our generated one.
-app.config["SECRET_KEY"] = b64decode(result["Attributes"]["SecretKey"])
+    # Attempt to fetch this from DyanmoDB first. This will succeed every time
+    # after the first invocation.
+    result = ddb_events.get_item(Key={"EventId": "_"}, ConsistentRead=True)
+    item = result.get("Item", {})
+    secret_key_encrypted = item.get("SecretKey")
+    if secret_key_encrypted:
+        result = kms.decrypt(
+            CiphertextBlob=secret_key_encrypted,
+            EncryptionContext=encryption_context
+        )
+
+        secret_key = result.get("Plaintext")
+        if secret_key:
+            app.config["SECRET_KEY"] = secret_key
+            return
+
+    # This doesn't exist yet. Generate a new key.
+    secret_key = urandom(16)
+
+    # Encrypt it with our KMS key.
+    result = kms.encrypt(
+        KeyId=app.config["ENCRYPTION_KEY_ID"],
+        Plaintext=secret_key,
+        EncryptionContext=encryption_context
+    )
+
+    secret_key_encrypted = result["CiphertextBlob"]
+
+    # Write this out *only if* nobody else has updated it in the meantime.
+    result = ddb_events.update_item(
+        Key={"EventId": "_"},
+        UpdateExpression="SET SecretKey = if_not_exists(SecretKey, :new_secret_key)",
+        ExpressionAttributeValues={":new_secret_key": secret_key_encrypted},
+        ReturnValues="ALL_NEW")
+
+    # Always retrieve the value from DyanmoDB; this might not be our generated
+    # key (if there's a concurrent update).
+    secret_key_encrypted = result["Attributes"]["SecretKey"]
+
+    result = kms.decrypt(
+        CiphertextBlob=secret_key_encrypted,
+        EncryptionContext=encryption_context
+    )
+
+    app.config["SECRET_KEY"] = result.get("Plaintext")
+    return
 
 # Items required by the Jijna templates
 app.jinja_env.globals["static_prefix"] = "static/"
