@@ -34,11 +34,11 @@ n_retries = 5
 b3 = Boto3Session()
 
 # AWS service handles
-ddb = b3.resource("dynamodb", resource=True)
+ddb = b3.resource("dynamodb")
 ddb_table_prefix = environ.get("LABCAFE_TABLE_PREFIX", "LabCafe.")
-ddb_events = dynamodb.Table(ddb_table_prefix + "Events")
-ddb_unallocinst = dynamodb.Table(ddb_table_prefix + "UnallocatedInstances")
-ddb_users = dynamodb.Table(ddb_table_prefix + "Users")
+ddb_events = ddb.Table(ddb_table_prefix + "Events")
+ddb_unallocinst = ddb.Table(ddb_table_prefix + "UnallocatedInstances")
+ddb_users = ddb.Table(ddb_table_prefix + "Users")
 ec2 = b3.client("ec2")
 efs = b3.client("efs")
 kms = b3.client("kms")
