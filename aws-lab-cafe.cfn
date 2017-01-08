@@ -114,19 +114,6 @@ Resources:
       Description: AWS Lab Cafe encryption key
       Enabled: true
       EnableKeyRotation: true
-      KeyPolicy:
-        Version: "2012-10-17"
-        Id: "key-default-1"
-        Statement:
-          -
-            Sid: "AllowUse"
-            Effect: Allow
-            Principal:
-              AWS: !GetAtt LambdaFunction.Arn
-            Action:
-              - "kms:Encrypt"
-              - "kms:Decrypt"
-            Resource: "*"
   ApiGatewayRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -200,6 +187,17 @@ Resources:
                   - ec2:StopInstances
                   - ec2:TerminateInstances
                 Resource: "*"
+        -
+          PolicyName: KMSAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: Allow
+                Action:
+                  - kms:Encrypt
+                  - kms:Decrypt
+                Resource: !GetAtt EncryptionKey.Arn
   EventsTable:
     Type: "AWS::DynamoDB::Table"
     Properties:
