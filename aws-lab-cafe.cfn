@@ -122,7 +122,7 @@ Resources:
             Sid: Allow key administration
             Effect: Allow
             Principal:
-              AWS: !Join ["", ["arn:aws:iam::", !Ref AWS::AccountId, ":root"]]
+              AWS: !Join ["", ["arn:aws:iam::", !Ref "AWS::AccountId", ":root"]]
             Action:
               - "kms:*"
             Resource: *
