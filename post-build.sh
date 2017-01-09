@@ -1,16 +1,13 @@
 #!/bin/bash -ex
 
-# We always append the timestamp to force CloudFormation to recognize our code
-# as new.
-TZ=UTC; export TZ
-DATETIME=$(date +'%Y%m%dT%H%M%SZ')
-
 # Add our app.
-zip -q -r aws-lab-cafe-${DATETIME}.zip \
+zip -q -r aws-lab-cafe.zip \
+  ./deploy.py \
+  ./deploy.pyc \
   ./labcafe.py \
   ./labcafe.pyc \
-  ./zappa_settings.json \
-  ./zappa_settings.py \
+  ./secretgen.py \
+  ./secretgen.pyc \
   ./bin \
   ./static \
   ./templates
@@ -28,12 +25,14 @@ rm -r lambda_packages/OpenCV
 rm -rf botocore* boto3* jmespath*
 
 # Add site-packages to the bundle
-zip -q -u -r ../../../../aws-lab-cafe-${DATETIME}.zip .
+zip -q -u -r ../../../../aws-lab-cafe.zip .
 
 # Upload the Lambda bundle to S3.
 cd $CODEBUILD_SRC_DIR
-aws s3 cp aws-lab-cafe-${DATETIME}.zip s3://cuthbert-labcafe-artifacts
+aws s3 cp aws-lab-cafe.zip s3://cuthbert-labcafe-artifacts
 
-# Modify the CloudFormation script
-mv aws-lab-cafe.cfn aws-lab-cafe.cfn.in
-sed -e "s/@@DATETIME@@/${DATETIME}/g" aws-lab-cafe.cfn.in > aws-lab-cafe.cfn
+# Upload the CloudFormation template to S3.
+aws s3 cp aws-lab-cafe.cfn s3://cuthbert-labcafe-artifacts
+
+# Upload the test parameters to S3.
+aws s3 cp aws-lab-cafe-test.json s3://cuthbert-labcafe-artifacts

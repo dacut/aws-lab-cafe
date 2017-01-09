@@ -4,7 +4,11 @@
         "aws_region": "us-west-2",
         "delete_local_zip": false,
         "delete_s3_zip": false,
-        "s3_bucket": "zappa-a8955bf6-a1d5-481a-998d-8686babdce13",
+        "domain": "labcafe.aws.cuthbert-test.net",
+        "lambda_description": "AWS Lab Cafe renderer",
+        "project_name": "AWS Lab Cafe",
+        "s3_bucket": "cuthbert-labcafe-artifacts",
+        "timeout_seconds": 5,
         "use_precompiled_packages": false
     }
 }
