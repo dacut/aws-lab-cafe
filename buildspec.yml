@@ -13,6 +13,7 @@ phases:
       - ls -l venv/lib/python2.7/site-packages
   build:
     commands:
+      - chmod a+x ./pipeline-build.sh
       - ./pipeline-build.sh
   post_build:
     commands:
