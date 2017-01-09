@@ -5,8 +5,13 @@
         "delete_local_zip": false,
         "delete_s3_zip": false,
         "domain": "labcafe.aws.cuthbert-test.net",
+        "environment_variables": {
+            "ENCRYPTION_KEY_ID": "1d194542-7198-420f-9777-c79c3b617e3f"
+        },
         "lambda_description": "AWS Lab Cafe renderer",
+        "manage_roles": false,
         "project_name": "AWS Lab Cafe",
+        "role_name": "LabCafe",
         "s3_bucket": "cuthbert-labcafe-artifacts",
         "timeout_seconds": 5,
         "use_precompiled_packages": false

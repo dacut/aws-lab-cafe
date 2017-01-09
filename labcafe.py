@@ -85,7 +85,13 @@ def set_secret_key(app):
 
     # Attempt to fetch this from DyanmoDB first. This will succeed every time
     # after the first invocation.
-    result = ddb_events.get_item(Key={"EventId": "_"}, ConsistentRead=True)
+    try:
+        result = ddb_events.get_item(Key={"EventId": "_"}, ConsistentRead=True)
+    except ClientError as e:
+        import traceback
+        traceback.print_exc()
+        result = {}
+
     item = result.get("Item", {})
     secret_key_encrypted = item.get("SecretKey")
     if secret_key_encrypted:
