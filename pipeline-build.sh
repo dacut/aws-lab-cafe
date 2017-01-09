@@ -5,7 +5,7 @@ python2.7 ./generate-zappa-settings.py
 
 cd putty-0.67
 chmod ugo+x ./configure
-./configure
+./configure --without-gtk
 make -j 4
 cd ..
 cp putty-0.67/puttygen bin/puttygen
