@@ -80,7 +80,7 @@ def set_secret_key(app):
     """
     encryption_context = {
         "Application": "AWSLabCafe",
-        "LambdaFunctionName": environ.get("AWS_LAMBA_FUNCTION_NAME", "")
+        "LambdaFunctionName": environ.get("AWS_LAMBDA_FUNCTION_NAME", "")
     }
 
     # Attempt to fetch this from DyanmoDB first. This will succeed every time
@@ -90,7 +90,7 @@ def set_secret_key(app):
     secret_key_encrypted = item.get("SecretKey")
     if secret_key_encrypted:
         result = kms.decrypt(
-            CiphertextBlob=secret_key_encrypted,
+            CiphertextBlob=b64decode(secret_key_encrypted),
             EncryptionContext=encryption_context
         )
 
@@ -102,6 +102,7 @@ def set_secret_key(app):
     # This doesn't exist yet. Generate a new key.
     secret_key = urandom(16)
 
+    print(encryption_context)
     # Encrypt it with our KMS key.
     result = kms.encrypt(
         KeyId=app.config["ENCRYPTION_KEY_ID"],
@@ -115,7 +116,7 @@ def set_secret_key(app):
     result = ddb_events.update_item(
         Key={"EventId": "_"},
         UpdateExpression="SET SecretKey = if_not_exists(SecretKey, :new_secret_key)",
-        ExpressionAttributeValues={":new_secret_key": secret_key_encrypted},
+        ExpressionAttributeValues={":new_secret_key": b64encode(secret_key_encrypted)},
         ReturnValues="ALL_NEW")
 
     # Always retrieve the value from DyanmoDB; this might not be our generated
@@ -129,6 +130,8 @@ def set_secret_key(app):
 
     app.config["SECRET_KEY"] = result.get("Plaintext")
     return
+
+set_secret_key(app)
 
 # Items required by the Jijna templates
 app.jinja_env.globals["static_prefix"] = "static/"
