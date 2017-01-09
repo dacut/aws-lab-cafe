@@ -1,9 +1,19 @@
 #!/bin/bash -ex
+
+# We always append the timestamp to force CloudFormation to recognize our code
+# as new.
 TZ=UTC; export TZ
 DATETIME=$(date +'%Y%m%dT%H%M%SZ')
-# Add our app.
-zip -q aws-lab-cafe-${DATETIME}.zip ./labcafe.py ./importtest.py ./zappa_settings.json
 
+# Add our app.
+zip -q -r aws-lab-cafe-${DATETIME}.zip \
+  ./labcafe.py \
+  ./labcafe.pyc \
+  ./zappa_settings.json \
+  ./zappa_settings.py \
+  ./bin \
+  ./static \
+  ./templates
 
 # Add site-packages to the root of the Lambda bundle.
 cd venv/lib/python2.7/site-packages

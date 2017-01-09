@@ -13,7 +13,7 @@ phases:
       - ls -l venv/lib/python2.7/site-packages
   build:
     commands:
-      - source venv/bin/activate && python -m py_compile ./labcafe.py
+      - ./pipeline-build.sh
   post_build:
     commands:
       - chmod a+x ./post-build.sh
