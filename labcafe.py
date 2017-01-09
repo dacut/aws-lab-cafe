@@ -121,7 +121,7 @@ def set_secret_key(app):
 
     # Always retrieve the value from DyanmoDB; this might not be our generated
     # key (if there's a concurrent update).
-    secret_key_encrypted = result["Attributes"]["SecretKey"]
+    secret_key_encrypted = b64decode(result["Attributes"]["SecretKey"])
 
     result = kms.decrypt(
         CiphertextBlob=secret_key_encrypted,
