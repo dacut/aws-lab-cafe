@@ -1,12 +1,13 @@
 version: 0.1
 
 phases:
-   install:
-     commands:
-       - yum install -y autoconf binutils cracklib-devel gcc python27-devel zip
-       - python2.7 ./get-pip.py
-       - pip install awscli virtualenv
-       - ln -s aclocal /usr/bin/aclocal-1.14
+  install:
+    commands:
+      - yum install -y autoconf binutils cracklib-devel gcc python27-devel zip
+      - python2.7 ./get-pip.py
+      - pip install awscli virtualenv
+      # Fix for broken puttygen autoconf script
+      - ln -s aclocal /usr/bin/aclocal-1.14
   pre_build:
     commands:
       - virtualenv venv
