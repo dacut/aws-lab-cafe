@@ -211,17 +211,6 @@ Resources:
                   - ec2:StopInstances
                   - ec2:TerminateInstances
                 Resource: "*"
-        -
-          PolicyName: KMSAccess
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              -
-                Effect: Allow
-                Action:
-                  - kms:Encrypt
-                  - kms:Decrypt
-                Resource: !GetAtt EncryptionKey.Arn
   EventsTable:
     Type: "AWS::DynamoDB::Table"
     Properties:
