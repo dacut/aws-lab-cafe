@@ -83,7 +83,7 @@ Resources:
           LABCAFE_TABLE_PREFIX: !Ref DynamoDBTablePrefix
       Handler: "deploy.zappa_deploy"
       MemorySize: 1024
-      Role: !GetAtt LambdaRole.Arn
+      Role: !GetAtt ZappaDeployRole.Arn
       Runtime: python2.7
       Timeout: 300
   EncryptionKey:
@@ -108,7 +108,7 @@ Resources:
             Sid: Allow encryption/decryption
             Effect: Allow
             Principal:
-              AWS: !GetAtt LambdaRole.Arn
+              AWS: !GetAtt ZappaDeployRole.Arn
             Action:
               - kms:Decrypt
               - kms:DescribeKey
