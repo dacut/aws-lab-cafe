@@ -13,7 +13,7 @@ fi;
 rm -rf $SITE_PACKAGES/botocore* $SITE_PACKAGES/boto3* $SITE_PACKAGES/jmespath*
 
 # Add our app.
-zip -q -r aws-lab-cafe.zip \
+zip -q -r -y aws-lab-cafe.zip \
   ./deploy.py \
   ./deploy.pyc \
   ./labcafe.py \
