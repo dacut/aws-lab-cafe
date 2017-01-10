@@ -151,8 +151,23 @@ Resources:
                 Effect: Allow
                 Action:
                   - "apigateway:*"
+                  - "cloudformation:*"
+                  - "cloudwatch:*"
+                  - "events:*"
                   - "lambda:*"
                   - "logs:*"
+                  - "iam:AttachRolePolicy"
+                  - "iam:CreateRole"
+                  - "iam:DeleteRole"
+                  - "iam:DeleteRolePolicy"
+                  - "iam:DetachRolePolicy"
+                  - "iam:GetRole"
+                  - "iam:GetRolePolicy"
+                  - "iam:ListRolePolicies"
+                  - "iam:PutRolePolicy"
+                  - "iam:UpdateAssumeRolePolicy"
+                  - "lambda:*"
+                  - "route53:*"
                 Resource: "*"
               -
                 Effect: Allow
