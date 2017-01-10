@@ -3,7 +3,7 @@ from __future__ import absolute_import, print_function
 from json import dump as json_dump, dumps as json_dumps
 from os import chdir, environ, listdir, makedirs, readlink
 from os.path import isfile, isdir, islink
-from shutil import copytree
+from shutil import copytree, rmtree
 import sys
 from time import gmtime, strftime
 from traceback import format_exc, print_exc
@@ -67,6 +67,8 @@ def handle_zappa(event, context):
     request_type = event["RequestType"]
     logical_resource_id = event["LogicalResourceId"]
 
+    if exists("/tmp/zappa"):
+        rmtree("/tmp/zappa")
     copytree(environ["LAMBDA_TASK_ROOT"], "/tmp/zappa", symlinks=True)
     chdir("/tmp/zappa")
     sys.path[:0] = [
