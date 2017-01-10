@@ -6,7 +6,6 @@ from shutil import copytree
 import sys
 from traceback import print_exc
 from urlparse import urlparse
-from zappa.cli import ZappaCLI
 
 def update_zappa_settings(event):
     resource_props = event.get("ResourceProperties")
@@ -75,6 +74,7 @@ def handle_zappa(event, context):
 
     update_zappa_settings(event)
 
+    from zappa.cli import ZappaCLI
     zcli = ZappaCLI()
     if request_type in "Create":
         if zcli.handle(["deploy", logical_resource_id]):
