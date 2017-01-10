@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.7
 from __future__ import absolute_import, print_function
 from json import dump as json_dump, dumps as json_dumps
-from os import chdir, environ, makedirs
+from os import chdir, environ, makedirs, walk
 from shutil import copytree
 import sys
 from traceback import print_exc
@@ -67,8 +67,10 @@ def handle_zappa(event, context):
 
     copytree(environ["LAMBDA_RUNTIME_DIR"], "/tmp/zappa", symlinks=True)
     chdir("/tmp/zappa")
-    sys.path = ["/tmp/zappa", "/tmp/zappa/venv/lib/python2.7",
-                "/tmp/zappa/venv/lib/python2.7/site-packages"] + sys.path
+    sys.path[:0] = [
+        "/tmp/zappa",
+        "/tmp/zappa/venv/lib/python2.7",
+        "/tmp/zappa/venv/lib/python2.7/site-packages"]
     environ["PATH"] = "/tmp/zappa/venv/bin:" + environ["PATH"]
     environ["VIRTUAL_ENV"] = "/tmp/zappa/venv"
 
@@ -93,6 +95,8 @@ def handler(event, context):
     Manage AWS Lab Cafe deployment using Zappa.
     """
     print(str(event))
+    sys.path.append(environ["LAMBDA_RUNTIME_DIR"] + "/venv/lib/python2.7")
+    sys.path.append(environ["LAMBDA_RUNTIME_DIR"] + "/venv/lib/python2.7/site-packages")
     resource_type = event["ResourceType"]
 
     try:
@@ -109,6 +113,18 @@ def handler(event, context):
 
         status = "SUCCESS"
     except ImportError:
+        print_exc()
+
+        for dirpath, dirnames, filenames in walk(environ["LAMBDA_RUNTIME_DIR"]):
+            print("%s/" % dirpath)
+            for filename in filenames:
+                print("    %s" % filename)
+
+        for dirpath, dirnames, filenames in walk("/tmp/zappa"):
+            print("%s/" % dirpath)
+            for filename in filenames:
+                print("    %s" % filename)
+
         raise
     except Exception as e:
         print_exc()
