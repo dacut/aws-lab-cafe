@@ -108,10 +108,13 @@ def handler(event, context):
                             type(result).__name__)
 
         status = "SUCCESS"
+    except ImportError:
+        raise
     except Exception as e:
         print_exc()
         status = "FAILED"
         reason = str(e)
+        result = {}
 
     response_url = event["ResponseURL"]
     reponse_host = urlparse(response_url).netloc
