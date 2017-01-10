@@ -125,6 +125,7 @@ Resources:
           -
             Id: Delete Zappa objects
             ExpirationInDays: 1
+            Status: Enabled
       Tags:
         -
           Key: Purpose
