@@ -26,8 +26,8 @@ install() {
   pip install awscli virtualenv
 
   # PuTTY wants Automake-1.14, but we only have 1.13 (and it's good enough)
-  ln -s aclocal /usr/bin/aclocal-1.14
-  ln -s automake /usr/bin/automake-1.14
+  test -e /usr/bin/aclocal-1.14 || ln -s aclocal /usr/bin/aclocal-1.14
+  test -e /usr/bin/automake-1.14 || ln -s automake /usr/bin/automake-1.14
   return 0;
 }
 

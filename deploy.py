@@ -1,7 +1,8 @@
 #!/usr/bin/env python2.7
 from __future__ import absolute_import, print_function
 from json import dump as json_dump, dumps as json_dumps
-from os import chdir, environ, makedirs, walk
+from os import chdir, environ, listdir, makedirs, readlink
+from os.path import isfile, isdir, islink
 from shutil import copytree
 import sys
 from time import gmtime, strftime
@@ -66,7 +67,7 @@ def handle_zappa(event, context):
     request_type = event["RequestType"]
     logical_resource_id = event["LogicalResourceId"]
 
-    copytree(environ["LAMBDA_RUNTIME_DIR"], "/tmp/zappa", symlinks=True)
+    copytree(environ["LAMBDA_TASK_ROOT"], "/tmp/zappa", symlinks=True)
     chdir("/tmp/zappa")
     sys.path[:0] = [
         "/tmp/zappa",
@@ -96,8 +97,8 @@ def handler(event, context):
     Manage AWS Lab Cafe deployment using Zappa.
     """
     print(str(event))
-    sys.path.append(environ["LAMBDA_RUNTIME_DIR"] + "/venv/lib/python2.7")
-    sys.path.append(environ["LAMBDA_RUNTIME_DIR"] + "/venv/lib/python2.7/site-packages")
+    sys.path.append(environ["LAMBDA_TASK_ROOT"] + "/venv/lib/python2.7")
+    sys.path.append(environ["LAMBDA_TASK_ROOT"] + "/venv/lib/python2.7/site-packages")
     resource_type = event["ResourceType"]
 
     try:
@@ -122,11 +123,22 @@ def handler(event, context):
 
         result.write("sys.path=%r\n" % sys.path)
 
-        for pathname in sys.path:
-            for dirpath, dirnames, filenames in walk(pathname):
-                result.write("%s/\n" % dirpath)
-                for filename in filenames:
-                    result.write("    %s\n" % filename)
+        for pathel in sys.path:
+            result.write("%s/\n" % pathel)
+
+            try:
+                for filename in listdir(pathel):
+                    result.write("    %s" % filename)
+
+                    pathname = pathel + "/" + filename
+                    if isdir(pathname):
+                        result.write("/")
+                    elif islink(pathname):
+                        result.write("@ -> %s" % readlink(pathname))
+
+                    result.write("\n")
+            except OSError as e:
+                result.write("    %s\n" % e)
 
         key = "deploy-debug-" + strftime("%Y%m%dT%H%M%SZ", gmtime()) + ".txt"
         import boto3.session
