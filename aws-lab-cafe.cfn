@@ -154,7 +154,6 @@ Resources:
                   - "lambda:*"
                   - "logs:*"
                 Resource: "*"
-            Statement:
               -
                 Effect: Allow
                 Action:
