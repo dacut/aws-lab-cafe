@@ -4,6 +4,7 @@ from json import dump as json_dump, dumps as json_dumps
 from os import chdir, environ, makedirs
 import requests
 from shutil import copytree
+import sys
 from traceback import print_exc
 from urlparse import urlparse
 from zappa.cli import ZappaCLI
@@ -66,8 +67,13 @@ def handle_zappa(event, context):
     request_type = event["RequestType"]
     logical_resource_id = event["LogicalResourceId"]
 
-    copytree(environ["LAMBDA_RUNTIME_DIR"], "/tmp/zappa")
+    copytree(environ["LAMBDA_RUNTIME_DIR"], "/tmp/zappa", symlinks=True)
     chdir("/tmp/zappa")
+    sys.path = ["/tmp/zappa", "/tmp/zappa/venv/lib/python2.7",
+                "/tmp/zappa/venv/lib/python2.7/site-packages"] + sys.path
+    environ["PATH"] = "/tmp/zappa/venv/bin:" + environ["PATH"]
+    environ["VIRTUAL_ENV"] = "/tmp/zappa/venv"
+
     update_zappa_settings(event)
 
     zcli = ZappaCLI()

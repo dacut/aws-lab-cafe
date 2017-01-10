@@ -11,3 +11,5 @@ chmod ugo+x ./configure
 make -j 4
 cd ..
 cp putty-0.67/puttygen bin/puttygen
+
+virtualenv --relocatable venv

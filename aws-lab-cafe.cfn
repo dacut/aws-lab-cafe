@@ -161,9 +161,9 @@ Resources:
                   - s3:GetObject
                   - s3:PutObject
                 Resource:
-                  AWS:
                     - !Join ["", ["arn:aws:s3:::", !Ref ArtifactBucket]]
                     - !Join ["", ["arn:aws:s3:::", !Ref ArtifactBucket, "/*"]]
+
   EventsTable:
     Type: "AWS::DynamoDB::Table"
     Properties:
