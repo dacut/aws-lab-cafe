@@ -11,17 +11,16 @@ phases:
       - ln -s automake /usr/bin/automake-1.14
   pre_build:
     commands:
-      - virtualenv venv
-      - source venv/bin/activate && env && pip install -r requirements.txt
-      - ls -l venv/lib/python2.7/site-packages
+      - chmod a+x ./pipeline-pre-build.sh
+      - ./pipeline-pre-build.sh
   build:
     commands:
       - chmod a+x ./pipeline-build.sh
       - ./pipeline-build.sh
   post_build:
     commands:
-      - chmod a+x ./post-build.sh
-      - ./post-build.sh
+      - chmod a+x ./pipeline-post-build.sh
+      - ./pipeline-post-build.sh
 artifacts:
   type: zip
   files:
