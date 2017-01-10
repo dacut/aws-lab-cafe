@@ -1,0 +1,92 @@
+#!/bin/bash -ex
+
+main() {
+  if [[ $# -eq 0 ]]; then
+    echo "Usage: codebuild {install|prebuild|build|postbuild}" 1>&2;
+    exit 1;
+  fi;
+
+  case "$1" in
+    install | prebuild | build | postbuild )
+    "$1";;
+
+    * )
+    echo "Usage: codebuild {install|prebuild|build|postbuild}" 1>&2;
+    exit 1;
+  esac;
+
+  return 0;
+}
+
+install() {
+  yum install -y autoconf automake binutils cracklib-devel gcc python27-devel zip
+  python2.7 ./get-pip.py
+  pip install awscli virtualenv
+
+  # PuTTY wants Automake-1.14, but we only have 1.13 (and it's good enough)
+  ln -s aclocal /usr/bin/aclocal-1.14
+  ln -s automake /usr/bin/automake-1.14
+  return 0;
+}
+
+prebuild() {
+  virtualenv venv
+  source venv/bin/activate
+  pip install -r requirements.txt
+}
+
+build() {
+  source venv/bin/activate
+  python2.7 -m py_compile ./deploy.py
+  python2.7 -m py_compile ./labcafe.py
+
+  aws cloudformation validate-template --template-body "$(cat aws-lab-cafe.cfn)"
+
+  cd putty-0.67
+  chmod ugo+x ./configure
+  ./configure --without-gtk
+  make -j 4
+  cd ..
+  cp putty-0.67/puttygen bin/puttygen
+
+  virtualenv --relocatable venv
+}
+
+postbuild() {
+  SITE_PACKAGES=venv/lib/python2.7/site-packages
+
+  # Copy cracklib libraries to the site-packages directory
+  cp -p /usr/lib64/libcrack* $SITE_PACKAGES
+
+  # Remove OpenCV from lambda-packages (too big) and Lambda-included packages
+  if [[ -d $SITE_PACKAGES/lambda_packages/OpenCV ]]; then
+      rm -r $SITE_PACKAGES/lambda_packages/OpenCV
+  fi;
+
+  # Remove botocore, boto3, and jmespath; they're included
+  rm -rf $SITE_PACKAGES/botocore* $SITE_PACKAGES/boto3* $SITE_PACKAGES/jmespath*
+
+  # Add our app.
+  zip -q -r -y aws-lab-cafe.zip \
+    ./deploy.py \
+    ./deploy.pyc \
+    ./labcafe.py \
+    ./labcafe.pyc \
+    ./secretgen.py \
+    ./secretgen.pyc \
+    ./bin \
+    ./static \
+    ./templates \
+    ./venv
+
+  # Upload the Lambda bundle to S3.
+  aws s3 cp aws-lab-cafe.zip s3://cuthbert-labcafe-artifacts --quiet
+
+  # Upload the CloudFormation template to S3.
+  aws s3 cp aws-lab-cafe.cfn s3://cuthbert-labcafe-artifacts --quiet
+
+  # Upload the test parameters to S3.
+  aws s3 cp aws-lab-cafe-test.json s3://cuthbert-labcafe-artifacts --quiet
+}
+
+main
