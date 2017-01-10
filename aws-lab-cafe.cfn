@@ -129,29 +129,6 @@ Resources:
         -
           Key: Purpose
           Value: !Join ["", ["Artifacts for CloudFormation stack ", !Ref "AWS::StackName"]]
-  ApiGatewayRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          -
-            Effect: Allow
-            Principal:
-               Service: "apigateway.amazonaws.com"
-            Action: "sts:AssumeRole"
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
-      Policies:
-        -
-          PolicyName: LambdaFunctionAccess
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              -
-                Effect: Allow
-                Action: lambda:InvokeFunction
-                Resource: !GetAtt LambdaFunction.Arn
   LambdaRole:
     Type: "AWS::IAM::Role"
     Properties:
