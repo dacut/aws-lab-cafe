@@ -2,7 +2,7 @@
 from __future__ import absolute_import, print_function
 from json import dump as json_dump, dumps as json_dumps
 from os import chdir, environ, listdir, makedirs, readlink
-from os.path import isfile, isdir, islink
+from os.path import exists, isfile, isdir, islink
 from shutil import copytree, rmtree
 import sys
 from time import gmtime, strftime
