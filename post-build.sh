@@ -26,10 +26,10 @@ zip -q -r aws-lab-cafe.zip \
   ./venv
 
 # Upload the Lambda bundle to S3.
-aws s3 cp aws-lab-cafe.zip s3://cuthbert-labcafe-artifacts
+aws s3 cp aws-lab-cafe.zip s3://cuthbert-labcafe-artifacts --quiet
 
 # Upload the CloudFormation template to S3.
-aws s3 cp aws-lab-cafe.cfn s3://cuthbert-labcafe-artifacts
+aws s3 cp aws-lab-cafe.cfn s3://cuthbert-labcafe-artifacts --quiet
 
 # Upload the test parameters to S3.
-aws s3 cp aws-lab-cafe-test.json s3://cuthbert-labcafe-artifacts
+aws s3 cp aws-lab-cafe-test.json s3://cuthbert-labcafe-artifacts --quiet
