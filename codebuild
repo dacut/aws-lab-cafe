@@ -1,6 +1,8 @@
 #!/bin/bash -ex
 
 main() {
+  export PATH="${PATH}:/usr/local/sbin:/usr/local/bin"
+
   if [[ $# -eq 0 ]]; then
     echo "Usage: codebuild {install|prebuild|build|postbuild}" 1>&2;
     exit 1;
