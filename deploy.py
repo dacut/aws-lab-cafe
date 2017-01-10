@@ -4,7 +4,8 @@ from json import dump as json_dump, dumps as json_dumps
 from os import chdir, environ, makedirs, walk
 from shutil import copytree
 import sys
-from traceback import print_exc
+from time import gmtime, strftime
+from traceback import format_exc, print_exc
 from urlparse import urlparse
 
 def update_zappa_settings(event):
@@ -113,17 +114,27 @@ def handler(event, context):
 
         status = "SUCCESS"
     except ImportError:
-        print_exc()
+        from cStringIO import StringIO
+        result = StringIO()
 
-        for dirpath, dirnames, filenames in walk(environ["LAMBDA_RUNTIME_DIR"]):
-            print("%s/" % dirpath)
-            for filename in filenames:
-                print("    %s" % filename)
+        result.write(format_exc())
+        result.write("\n")
 
-        for dirpath, dirnames, filenames in walk("/tmp/zappa"):
-            print("%s/" % dirpath)
-            for filename in filenames:
-                print("    %s" % filename)
+        result.write("sys.path=%r\n" % sys.path)
+
+        for pathname in sys.path:
+            for dirpath, dirnames, filenames in walk(pathname):
+                result.write("%s/\n" % dirpath)
+                for filename in filenames:
+                    result.write("    %s\n" % filename)
+
+        key = "deploy-debug-" + strftime("%Y%m%dT%H%M%SZ", gmtime()) + ".txt"
+        import boto3.session
+        b3 = boto3.session.Session(region_name="us-west-2")
+        s3 = b3.client("s3")
+        s3.put_object(ACL="private", Bucket="cuthbert-labcafe-artifacts",
+                      Key=key, Body=result.getvalue())
+        print("Debugging output written to s3://cuthbert-labcafe-artifacts/%s" % key)
 
         raise
     except Exception as e:
