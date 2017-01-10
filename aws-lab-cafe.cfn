@@ -239,5 +239,5 @@ Resources:
         WriteCapacityUnits: !Ref UserTableWriteCapacityUnits
       TableName: !Join ["", [ !Ref DynamoDBTablePrefix , "Users"]]
 Outputs:
-  LambdaARN:
-    Value: !GetAtt LambdaFunction.Arn
+  DeployFunctionARN:
+    Value: !GetAtt DeployFunction.Arn
