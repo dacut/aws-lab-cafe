@@ -178,7 +178,7 @@ def handler(event, context):
 
     headers = {
         "Content-Type": "",
-        "Content-Length": len(body)
+        "Content-Length": str(len(body))
     }
 
     print("Sending response to %s" % response_url)
