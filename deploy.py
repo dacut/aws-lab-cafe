@@ -2,7 +2,6 @@
 from __future__ import absolute_import, print_function
 from json import dump as json_dump, dumps as json_dumps
 from os import chdir, environ, makedirs
-import requests
 from shutil import copytree
 import sys
 from traceback import print_exc
@@ -140,6 +139,7 @@ def handler(event, context):
 
     print("Sending response to %s" % response_url)
     print(body)
+    import requests
     r = requests.put(response_url, headers=headers, data=body)
     print("Result: %d %s" % (r.status_code, r.reason))
     return
