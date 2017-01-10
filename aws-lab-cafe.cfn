@@ -64,8 +64,11 @@ Resources:
   Deployment:
     Type: "Custom::Zappa"
     Properties:
-      ServiceToken: !GetAtt DeployFunction.Arn
+      Debug: !Ref EnableDebug
+      EncryptionKeyId: !Ref EncryptionKey
       Region: !Ref "AWS::Region"
+      S3Bucket: !Ref ArtifactBucket
+      ServiceToken: !GetAtt DeployFunction.Arn
   DeployFunction:
     Type: "AWS::Lambda::Function"
     Properties:
@@ -113,6 +116,19 @@ Resources:
               - kms:GenerateDataKey
               - "kms:ReEncrypt*"
             Resource: "*"
+  ArtifactBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      AccessControl: Private
+      LifecycleConfiguration:
+        Rules:
+          -
+            Id: Delete Zappa objects
+            ExpirationInDays: 1
+      Tags:
+        -
+          Key: Purpose
+          Value: !Join ["", ["Artifacts for CloudFormation stack ", !Ref "AWS::StackName"]]
   ApiGatewayRole:
     Type: "AWS::IAM::Role"
     Properties:
