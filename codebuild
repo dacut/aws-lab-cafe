@@ -21,7 +21,8 @@ main() {
 }
 
 install() {
-  yum install -y autoconf automake binutils cracklib-devel gcc patch python27-devel zip
+  yum install -y autoconf automake binutils cracklib-devel findutils gcc patch \
+    python27-devel zip
   python2.7 ./get-pip.py
   pip install awscli virtualenv
 
@@ -64,12 +65,12 @@ postbuild() {
   # Copy cracklib libraries to the site-packages directory
   cp -p /usr/lib64/libcrack* $SITE_PACKAGES
 
-  # Remove lambda-packages (too big) and Lambda-included packages
+  # Remove lambda-packages binaries
   if [[ -d $SITE_PACKAGES/lambda_packages ]]; then
-      rm -r $SITE_PACKAGES/lambda_packages
+      find $SITE_PACKAGES/lambda_packages -name \*.tar.gz -exec rm {} \;
   fi;
 
-  # Remove botocore, boto3, and jmespath; they're included
+  # Remove botocore, boto3, and jmespath; they're included in the Lambda runtime
   rm -rf $SITE_PACKAGES/botocore* $SITE_PACKAGES/boto3* $SITE_PACKAGES/jmespath*
 
   # Add our app.
