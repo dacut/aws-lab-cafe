@@ -40,9 +40,9 @@ b3 = Boto3Session()
 
 # AWS service handles
 ddb = b3.resource("dynamodb")
-ddb_table_prefix = environ.get("LABCAFE_TABLE_PREFIX", "LabCafe.")
-ddb_events = ddb.Table(ddb_table_prefix + "Events")
-ddb_users = ddb.Table(ddb_table_prefix + "Users")
+ddb_table_prefix = environ.get("LABCAFE_TABLE_PREFIX", "LabCafe")
+ddb_events = ddb.Table(ddb_table_prefix + ".Events")
+ddb_users = ddb.Table(ddb_table_prefix + ".Users")
 ec2 = b3.client("ec2")
 kms = b3.client("kms")
 
