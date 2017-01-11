@@ -21,7 +21,7 @@ main() {
 }
 
 install() {
-  yum install -y autoconf automake binutils cracklib-devel gcc python27-devel zip
+  yum install -y autoconf automake binutils cracklib-devel gcc patch python27-devel zip
   python2.7 ./get-pip.py
   pip install awscli virtualenv
 
@@ -35,6 +35,9 @@ prebuild() {
   virtualenv venv
   source venv/bin/activate
   pip install -r requirements.txt
+
+  rm -f venv/lib/python2.7/site-packages/zappa/cli.pyc
+  patch -p 0 < zappa.patch
 }
 
 build() {
@@ -60,9 +63,9 @@ postbuild() {
   # Copy cracklib libraries to the site-packages directory
   cp -p /usr/lib64/libcrack* $SITE_PACKAGES
 
-  # Remove OpenCV from lambda-packages (too big) and Lambda-included packages
-  if [[ -d $SITE_PACKAGES/lambda_packages/OpenCV ]]; then
-      rm -r $SITE_PACKAGES/lambda_packages/OpenCV
+  # Remove lambda-packages (too big) and Lambda-included packages
+  if [[ -d $SITE_PACKAGES/lambda_packages ]]; then
+      rm -r $SITE_PACKAGES/lambda_packages
   fi;
 
   # Remove botocore, boto3, and jmespath; they're included
@@ -78,8 +81,12 @@ postbuild() {
     ./secretgen.pyc \
     ./bin \
     ./static \
-    ./templates \
-    ./venv
+    ./templates
+
+  # Add site-packages from the virtual environment
+  cd $SITE_PACKAGES
+  zip -q -r -y -u $CODEBUILD_SRC_DIR/aws-lab-cafe.zip .
+  cd $CODEBUILD_SRC_DIR
 
   # Upload the Lambda bundle to S3.
   aws s3 cp aws-lab-cafe.zip s3://cuthbert-labcafe-artifacts --quiet
