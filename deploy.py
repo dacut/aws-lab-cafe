@@ -42,7 +42,7 @@ def update_zappa_settings(event):
         "app_function": "labcafe.app",
         "aws_region": region,
         "delete_local_zip": False,
-        "delete_s3_zip": True,
+        "delete_s3_zip": False,
         "environment_variables": {
             "DEBUG": debug,
             "ENCRYPTION_KEY_ID": enc_key_id,
