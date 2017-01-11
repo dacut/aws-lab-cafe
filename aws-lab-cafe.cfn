@@ -38,19 +38,20 @@ Parameters:
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
-      Label:
-        default: Performance
-      Parameters:
-        - LambdaMemorySize
-        - EventTableRCU
-        - EventTableWCU
-        - UserTableRCU
-        - UserTableWCU
-    ParameterGroups:
-      Label:
-        default: Advanced
-      Parameters:
-        - EnableDebug
+      -
+        Label:
+          default: Performance
+        Parameters:
+          - LambdaMemorySize
+          - EventTableRCU
+          - EventTableWCU
+          - UserTableRCU
+          - UserTableWCU
+      -
+        Label:
+          default: Advanced
+        Parameters:
+          - EnableDebug
 Resources:
   Api:
     Type: AWS::ApiGateway::RestApi
@@ -165,15 +166,20 @@ Resources:
             Action: "sts:AssumeRole"
       Policies:
         -
-          Effect: Allow
-          Action:
-            - "cloudwatch:*"
-            - "logs:*"
-          Resource: "*"
-        -
-          Effect: Allow
-          Action: lambda:InvokeFunction
-          Resource: !GetAtt ZappaFunction.Arn
+          PolicyName: LambdaInvocation
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: Allow
+                Action:
+                  - "cloudwatch:*"
+                  - "logs:*"
+                Resource: "*"
+              -
+                Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt ZappaFunction.Arn
   ZappaFunctionRole:
     Type: "AWS::IAM::Role"
     Properties:
