@@ -44,6 +44,8 @@ build() {
   source venv/bin/activate
   python2.7 -m py_compile ./deploy.py
   python2.7 -m py_compile ./labcafe.py
+  python2.7 -m py_compile ./secretgen.py
+  python2.7 -m py_compile ./zappa_settings.py
 
   aws cloudformation validate-template --template-body "$(cat aws-lab-cafe.cfn)"
 
@@ -79,6 +81,8 @@ postbuild() {
     ./labcafe.pyc \
     ./secretgen.py \
     ./secretgen.pyc \
+    ./zappa_settings.py \
+    ./zappa_settings.pyc \
     ./bin \
     ./static \
     ./templates
