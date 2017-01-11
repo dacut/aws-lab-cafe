@@ -1,5 +1,5 @@
 from __future__ import absolute_import, print_function
-from distutils.utils import strtobool
+from distutils.util import strtobool
 from os import environ
 
 APP_MODULE = "labcafe"
