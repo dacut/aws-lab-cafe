@@ -258,8 +258,8 @@ Resources:
           AttributeName: EventId
           KeyType: HASH
       ProvisionedThroughput:
-        RCU: !Ref EventTableRCU
-        WCU: !Ref EventTableWCU
+        ReadCapacityUnits: !Ref EventTableRCU
+        WriteCapacityUnits: !Ref EventTableWCU
       TableName: !Join ["", [ !Ref "AWS::StackName", ".Events"]]
   UsersTable:
     Type: "AWS::DynamoDB::Table"
@@ -279,8 +279,8 @@ Resources:
           AttributeName: EventId
           KeyType: RANGE
       ProvisionedThroughput:
-        RCU: !Ref UserTableRCU
-        WCU: !Ref UserTableWCU
+        ReadCapacityUnits: !Ref UserTableRCU
+        WriteCapacityUnits: !Ref UserTableWCU
       TableName: !Join ["", [ !Ref "AWS::StackName", ".Users"]]
 Outputs:
   ZappaFunctionARN:
