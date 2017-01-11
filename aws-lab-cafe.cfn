@@ -1,10 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "AWS Lab Cafe -- allow students in a lab to deploy EC2 instances without having to know about AWS."
 Parameters:
-  DynamoDBTablePrefix:
-    Type: String
-    Default: "LabCafe."
-    Description: Prefix for all DynamoDB tables used by LabCafe.
   EnableDebug:
     Type: String
     Default: false
@@ -19,22 +15,22 @@ Parameters:
     AllowedValues: [128, 192, 256, 320, 384, 448, 512, 576, 640, 704, 768, 832,
       896, 960, 1024, 1088, 1152, 1216, 1280, 1344, 1408, 1472, 1536]
     ConstraintDescription: Must be from 128-1536 MB in multiples of 64 MB.
-  EventTableReadCapacityUnits:
+  EventTableRCU:
     Type: Number
     Default: 5
     Description: The DynamoDB provisioned read capacity for the events table.
     MinValue: 1
-  EventTableWriteCapacityUnits:
+  EventTableWCU:
     Type: Number
     Default: 1
     Description: The DynamoDB provisioned write capacity for the events table.
     MinValue: 1
-  UserTableReadCapacityUnits:
+  UserTableRCU:
     Type: Number
     Default: 5
     Description: The DynamoDB provisioned read capacity for the users table.
     MinValue: 1
-  UserTableWriteCapacityUnits:
+  UserTableWCU:
     Type: Number
     Default: 1
     Description: The DynamoDB provisioned write capacity for the users table.
@@ -43,34 +39,72 @@ Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
       Label:
-        default: Object names
-      Parameters:
-        - DynamoDBTablePrefix
-    ParameterGroups:
-      Label:
         default: Performance
       Parameters:
         - LambdaMemorySize
-        - EventTableReadCapacityUnits
-        - EventTableWriteCapacityUnits
-        - UserTableReadCapacityUnits
-        - UserTableWriteCapacityUnits
+        - EventTableRCU
+        - EventTableWCU
+        - UserTableRCU
+        - UserTableWCU
     ParameterGroups:
       Label:
         default: Advanced
       Parameters:
         - EnableDebug
 Resources:
-  Deployment:
-    Type: "Custom::Zappa"
+  Api:
+    Type: AWS::ApiGateway::RestApi
     Properties:
-      Debug: !Ref EnableDebug
-      EncryptionKeyId: !Ref EncryptionKey
-      Region: !Ref "AWS::Region"
-      S3Bucket: !Ref ArtifactBucket
-      ServiceToken: !GetAtt DeployFunction.Arn
-  DeployFunction:
-    Type: "AWS::Lambda::Function"
+      Description: !Join ["", ["AWS Lab Cafe: ", !Ref "AWS::StackName" ]]
+      Name: !Ref AWS::StackName
+  ProxyPath:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt Api.RootResourceId
+      PathPath: "{proxy+}"
+      RestApiId: !Ref Api
+  RootMethods:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      ApiKeyRequired: false
+      AuthorizationType: NONE
+      HttpMethod: ANY
+      Integration:
+        CacheKeyParameters: []
+        CacheNamespace: none
+        Credentials: !GetAtt LambdaInvocationRole.Arn
+        IntegrationHttpMethod: POST
+        IntegrationResponses: []
+        PassthroughBehavior: NEVER
+        Type: AWS_PROXY
+        Uri: !Join ["", ["arn:aws:apigateway:", !Ref "AWS::Region",
+                         ":lambda:path/2015-03-31/functions/",
+                         !GetAtt ZappaFunction.Arn, "/invocations"]]
+      MethodResponses: []
+      ResourceId: !GetAtt Api.RootResourceId
+      RestApiId: !Ref Api
+  ProxyMethods:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      ApiKeyRequired: false
+      AuthorizationType: NONE
+      HttpMethod: ANY
+      Integration:
+        CacheKeyParameters: []
+        CacheNamespace: none
+        Credentials: !GetAtt LambdaInvocationRole.Arn
+        IntegrationHttpMethod: POST
+        IntegrationResponses: []
+        PassthroughBehavior: NEVER
+        Type: AWS_PROXY
+        Uri: !Join ["", ["arn:aws:apigateway:", !Ref "AWS::Region",
+                         ":lambda:path/2015-03-31/functions/",
+                         !GetAtt ZappaFunction.Arn, "/invocations"]]
+      MethodResponses: []
+      ResourceId: !Ref ProxyPath
+      RestApiId: !Ref Api
+  ZappaFunction:
+    Type: AWS::Lambda::Function
     Properties:
       Code:
         S3Bucket: cuthbert-labcafe-artifacts
@@ -80,12 +114,12 @@ Resources:
         Variables:
           DEBUG: !Ref EnableDebug
           ENCRYPTION_KEY_ID: !Ref EncryptionKey
-          LABCAFE_TABLE_PREFIX: !Ref DynamoDBTablePrefix
-      Handler: "deploy.zappa_deploy"
+          LABCAFE_TABLE_PREFIX: !Ref "AWS::StackName"
+      Handler: "labcafe.handler"
       MemorySize: 1024
-      Role: !GetAtt ZappaDeployRole.Arn
+      Role: !GetAtt ZappaFunctionRole.Arn
       Runtime: python2.7
-      Timeout: 300
+      Timeout: 10
   EncryptionKey:
     Type: "AWS::KMS::Key"
     Properties:
@@ -108,7 +142,7 @@ Resources:
             Sid: Allow encryption/decryption
             Effect: Allow
             Principal:
-              AWS: !GetAtt ZappaDeployRole.Arn
+              AWS: !GetAtt ZappaFunctionRole.Arn
             Action:
               - kms:Decrypt
               - kms:DescribeKey
@@ -116,21 +150,31 @@ Resources:
               - kms:GenerateDataKey
               - "kms:ReEncrypt*"
             Resource: "*"
-  ArtifactBucket:
-    Type: "AWS::S3::Bucket"
+  LambdaInvocationRole:
+    Type: "AWS::IAM::Role"
     Properties:
-      AccessControl: Private
-      LifecycleConfiguration:
-        Rules:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
           -
-            Id: Delete Zappa objects
-            ExpirationInDays: 1
-            Status: Enabled
-      Tags:
+            Effect: Allow
+            Principal:
+              Service:
+                - "apigateway.amazonaws.com"
+                - "events.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Policies:
         -
-          Key: Purpose
-          Value: !Join ["", ["Artifacts for CloudFormation stack ", !Ref "AWS::StackName"]]
-  ZappaDeployRole:
+          Effect: Allow
+          Action:
+            - "cloudwatch:*"
+            - "logs:*"
+          Resource: "*"
+        -
+          Effect: Allow
+          Action: lambda:InvokeFunction
+          Resource: !GetAtt ZappaFunction.Arn
+  ZappaFunctionRole:
     Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
@@ -143,42 +187,65 @@ Resources:
             Action: "sts:AssumeRole"
       Policies:
         -
-          PolicyName: ZappaDeploymentAccess
+          PolicyName: LabCafeAccess
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               -
                 Effect: Allow
                 Action:
-                  - "apigateway:*"
-                  - "cloudformation:*"
                   - "cloudwatch:*"
-                  - "events:*"
-                  - "lambda:*"
+                  - "efs:*"
                   - "logs:*"
-                  - "iam:AttachRolePolicy"
-                  - "iam:CreateRole"
-                  - "iam:DeleteRole"
-                  - "iam:DeleteRolePolicy"
-                  - "iam:DetachRolePolicy"
-                  - "iam:GetRole"
-                  - "iam:GetRolePolicy"
-                  - "iam:ListRolePolicies"
-                  - "iam:PutRolePolicy"
-                  - "iam:UpdateAssumeRolePolicy"
-                  - "lambda:*"
-                  - "route53:*"
                 Resource: "*"
               -
                 Effect: Allow
                 Action:
-                  - s3:DeleteObject
-                  - s3:GetObject
-                  - s3:PutObject
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:GetItem
+                  - dynamodb:ListTables
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:UpdateItem
                 Resource:
-                    - !Join ["", ["arn:aws:s3:::", !Ref ArtifactBucket]]
-                    - !Join ["", ["arn:aws:s3:::", !Ref ArtifactBucket, "/*"]]
-
+                  - !Join ["", ["arn:aws:dynamodb:", !Ref "AWS::Region", ":",
+                                !Ref "AWS::AccountId", ":table/",
+                                !Ref "AWS::StackName", ".Events"]]
+                  - !Join ["", ["arn:aws:dynamodb:", !Ref "AWS::Region", ":",
+                                !Ref "AWS::AccountId", ":table/",
+                                !Ref "AWS::StackName", ".Users"]]
+              -
+                Effect: Allow
+                Action:
+                  - ec2:AttachVolume
+                  - ec2:CreateTags
+                  - ec2:CreateVolume
+                  - ec2:DeleteTags
+                  - ec2:DeleteVolume
+                  - ec2:DescribeImageAttribute
+                  - ec2:DescribeImages
+                  - ec2:DescribeInstanceAttribute
+                  - ec2:DescribeInstances
+                  - ec2:DescribeInstanceStatus
+                  - ec2:DescribeSecurityGroups
+                  - ec2:DescribeTags
+                  - ec2:GetConsoleOutput
+                  - ec2:GetConsoleScreenshot
+                  - ec2:ModifyInstanceAttribute
+                  - ec2:ModifyVolumeAttribute
+                  - ec2:RebootInstances
+                  - ec2:ResetInstanceAttribute
+                  - ec2:RunInstances
+                  - ec2:StartInstances
+                  - ec2:StopInstances
+                  - ec2:TerminateInstances
+                Resource: "*"
+                Condition:
+                  StringEquals:
+                    ec2:Region: !Ref AWS::Region
   EventsTable:
     Type: "AWS::DynamoDB::Table"
     Properties:
@@ -191,9 +258,9 @@ Resources:
           AttributeName: EventId
           KeyType: HASH
       ProvisionedThroughput:
-        ReadCapacityUnits: !Ref EventTableReadCapacityUnits
-        WriteCapacityUnits: !Ref EventTableWriteCapacityUnits
-      TableName: !Join ["", [ !Ref DynamoDBTablePrefix , "Events"]]
+        RCU: !Ref EventTableRCU
+        WCU: !Ref EventTableWCU
+      TableName: !Join ["", [ !Ref "AWS::StackName", ".Events"]]
   UsersTable:
     Type: "AWS::DynamoDB::Table"
     Properties:
@@ -212,9 +279,9 @@ Resources:
           AttributeName: EventId
           KeyType: RANGE
       ProvisionedThroughput:
-        ReadCapacityUnits: !Ref UserTableReadCapacityUnits
-        WriteCapacityUnits: !Ref UserTableWriteCapacityUnits
-      TableName: !Join ["", [ !Ref DynamoDBTablePrefix , "Users"]]
+        RCU: !Ref UserTableRCU
+        WCU: !Ref UserTableWCU
+      TableName: !Join ["", [ !Ref "AWS::StackName", ".Users"]]
 Outputs:
-  DeployFunctionARN:
-    Value: !GetAtt DeployFunction.Arn
+  ZappaFunctionARN:
+    Value: !GetAtt ZappaFunction.Arn
