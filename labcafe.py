@@ -2,6 +2,7 @@
 from __future__ import absolute_import, print_function
 from base64 import b64decode, b64encode
 from botocore.exceptions import BotoCoreError, ClientError
+from boto3.dynamodb.conditions import Attr as AttrCondition
 from boto3.session import Session as Boto3Session
 from cracklib import VeryFascistCheck
 from cStringIO import StringIO
@@ -17,6 +18,7 @@ from httplib import BAD_REQUEST, FORBIDDEN, OK, SERVICE_UNAVAILABLE, UNAUTHORIZE
 from os import close, environ, fsync, urandom, write
 from passlib.hash import pbkdf2_sha512
 from random import randint
+import requests
 from shutil import rmtree
 from six import text_type
 from string import ascii_letters, digits
@@ -39,6 +41,7 @@ n_retries = 5
 b3 = Boto3Session()
 
 # AWS service handles
+apigw = b3.client("apigateway")
 ddb = b3.resource("dynamodb")
 ddb_table_prefix = environ.get("LABCAFE_TABLE_PREFIX", "LabCafe")
 ddb_events = ddb.Table(ddb_table_prefix + ".Events")
@@ -69,6 +72,11 @@ app.config["DEBUG"] = strtobool(
 app.config["TEMPLATES_AUTO_RELOAD"] = strtobool(
     environ.get("TEMPLATES_AUTO_RELOAD", "False"))
 app.config["ENCRYPTION_KEY_ID"] = environ["ENCRYPTION_KEY_ID"]
+app.config["ENCRYPTION_CONTEXT"] = {
+    "Application": "AWSLabCafe",
+    "LambdaFunctionName": environ.get("AWS_LAMBDA_FUNCTION_NAME", "")
+}
+app.config["PBKDF2_SHA512_ROUNDS"] = 96000
 
 def set_secret_key(app):
     """
@@ -77,11 +85,6 @@ def set_secret_key(app):
     Set the SECRET_KEY field of the Flask app config using the value stored in
     DynamoDB.
     """
-    encryption_context = {
-        "Application": "AWSLabCafe",
-        "LambdaFunctionName": environ.get("AWS_LAMBDA_FUNCTION_NAME", "")
-    }
-
     # Attempt to fetch this from DyanmoDB first. This will succeed every time
     # after the first invocation.
     try:
@@ -96,7 +99,7 @@ def set_secret_key(app):
     if secret_key_encrypted:
         result = kms.decrypt(
             CiphertextBlob=b64decode(secret_key_encrypted),
-            EncryptionContext=encryption_context
+            EncryptionContext=app.config["ENCRYPTION_CONTEXT"]
         )
 
         secret_key = result.get("Plaintext")
@@ -112,7 +115,7 @@ def set_secret_key(app):
     result = kms.encrypt(
         KeyId=app.config["ENCRYPTION_KEY_ID"],
         Plaintext=secret_key,
-        EncryptionContext=encryption_context
+        EncryptionContext=app.config["ENCRYPTION_CONTEXT"]
     )
 
     secret_key_encrypted = result["CiphertextBlob"]
@@ -130,7 +133,7 @@ def set_secret_key(app):
 
     result = kms.decrypt(
         CiphertextBlob=secret_key_encrypted,
-        EncryptionContext=encryption_context
+        EncryptionContext=app.config["ENCRYPTION_CONTEXT"]
     )
 
     app.config["SECRET_KEY"] = result.get("Plaintext")
@@ -254,7 +257,8 @@ def register_user(email, password, event_id, full_name, allow_contact):
     """
     If the user does not already exist for this event, register him/her.
     """
-    pwhash = pbkdf2_sha512.encrypt(password)
+    pwhash = pbkdf2_sha512.encrypt(
+        password, rounds=app.config["PBKDF2_SHA512_ROUNDS"])
     keys = generate_private_public_key()
 
     user_item = {
@@ -783,10 +787,92 @@ def logout(**kw):
         flash("<b>You have been logged out.</b>", category="info")
     return redirect("/login")
 
-def handler(*args, **kw):
+def handle_one_time_password_generation(event):
+    request_type = event["RequestType"]
+
+    if request_type in ["Create", "Update"]:
+        # Generate a one-time password and save it, encrypted, in the database.
+        otp = b58encode(urandom(20))[:20]
+        otp_hash = pbkdf2_sha512.encrypt(
+            otp, rounds=app.config["PBKDF2_SHA512_ROUNDS"])
+
+        ddb_events.update_item(
+            Key={"EventId": "_"},
+            UpdateExpression="SET OneTimePasswordHash = :otp",
+            ExpressionAttributeValues={":otp": otp_hash}
+        )
+        return {
+            "Password": otp,
+            "PhysicalResourceId": "password",
+        }
+    elif request_type == "Delete":
+        # Delete the one-time password if it exists.
+        ddb_events.update_item(
+            Key={"EventId": "_"},
+            UpdateExpression="REMOVE OneTimePasswordHash",
+            ConditionExpression=AttrCondition("OneTimePasswordHash").exists()
+        )
+        return {}
+    else:
+        raise RuntimeError("Unknown request type %s" % request_type)
+
+def handler(event, context):
+    cfn_resource_type = event.get("ResourceType")
+    if cfn_resource_type is None:
+        # Process this as a standard API Gateway request.
+        try:
+            return lambda_handler(event, context)
+        except Exception as e:
+            from traceback import print_exc
+            print_exc()
+            raise
+
+    # CloudFormation custom resource
+    status = "FAILED"
+    reason = None
+    request_type = event["RequestType"]
+    response_url = event["ResponseURL"]
+    stack_id = event["StackId"]
+    request_id = event["RequestId"]
+    stack_name = event["ResourceProperties"]["StackName"]
+    logical_resource_id = event["LogicalResourceId"]
+    physical_resource_id = event.get(
+        "PhysicalResourceId", stack_name + "-" + logical_resource_id)
+    stack_name = event["StackName"]
+    result = {}
+
+    print("Handling CloudFormation custom resource: %s %s" % (
+        request_type, cfn_resource_type))
+
     try:
-        return lambda_handler(*args, **kw)
+        if cfn_resource_type == "Custom::OneTimePasswordGeneration":
+            result = handle_one_time_password_generation(event)
+            status = "SUCCESS"
+        elif cfn_resource_type == "Custom::SiteURLRetrieval":
+            result = handle_site_url_retrieval(event)
+            status = "SUCCESS"
+        else:
+            status = "FAILED"
+            reason = "Unknown resource type %s" % (cfn_resource_type,)
     except Exception as e:
-        from traceback import print_exc
-        print_exc()
-        raise
+        status = "FAILED"
+        reason = "Custom resource event failed: %s" % (e,)
+
+    physical_resource_id = result.get(
+        "PhysicalResourceId", physical_resource_id)
+        
+    response = {
+        "Status": status,
+        "PhysicalResourceId": physical_resource_id,
+        "StackId": stack_id,
+        "RequestId": request_id,
+        "LogicalResourceId": logical_resource_id,
+        "Data": result,
+    }
+
+    if reason:
+        response["Reason"] = reason
+
+    r = requests.put(response_url, headers=headers, data=body)
+    print("Result: %d %s" % (r.status_code, r.reason))
+    return

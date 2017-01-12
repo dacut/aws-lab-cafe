@@ -104,8 +104,20 @@ Resources:
       MethodResponses: []
       ResourceId: !Ref ProxyPath
       RestApiId: !Ref Api
+  ApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - RootMethods
+      - ProxyMethods
+    Properties:
+      Description: !Join ["", ["AWS Lab Cafe deployment: ", !Ref "AWS::StackName"]]
+      RestApiId: !Ref Api
+      StageName: prod
   ZappaFunction:
     Type: AWS::Lambda::Function
+    DependsOn:
+      - EventsTable
+      - UsersTable
     Properties:
       Code:
         S3Bucket: cuthbert-labcafe-artifacts
@@ -121,6 +133,12 @@ Resources:
       Role: !GetAtt ZappaFunctionRole.Arn
       Runtime: python2.7
       Timeout: 10
+  OneTimePasswordGeneration:
+    Type: Custom::OneTimePasswordGeneration
+    DependsOn: ZappaFunction
+    Properties:
+      ServiceToken: !GetAtt ZappaFunction.Arn
+      Region: !Ref "AWS::Region"
   EncryptionKey:
     Type: "AWS::KMS::Key"
     Properties:
@@ -289,5 +307,10 @@ Resources:
         WriteCapacityUnits: !Ref UserTableWCU
       TableName: !Join ["", [ !Ref "AWS::StackName", ".Users"]]
 Outputs:
-  ZappaFunctionARN:
-    Value: !GetAtt ZappaFunction.Arn
+  OneTimePassword:
+    Description: Password to use to administrate this site.
+    Value: !GetAtt OneTimePasswordGeneration.Password
+  SiteURL:
+    Description: Browse to this URL to manage your site.
+    Value: !Join ["", ["https://", !Ref "Api", ".execute-api.",
+                       !Ref "AWS::Region", ".amazonaws.com/prod"]]
