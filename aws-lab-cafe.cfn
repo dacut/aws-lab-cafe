@@ -129,7 +129,7 @@ Resources:
           ENCRYPTION_KEY_ID: !Ref EncryptionKey
           LABCAFE_TABLE_PREFIX: !Ref "AWS::StackName"
       Handler: "labcafe.handler"
-      MemorySize: 1024
+      MemorySize: !Ref LambdaMemorySize
       Role: !GetAtt ZappaFunctionRole.Arn
       Runtime: python2.7
       Timeout: 10
