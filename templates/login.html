@@ -4,7 +4,7 @@
 <div class="row">
   <div class="col-xs-12 col-sm-6">
     <h2>Existing Users</h2>
-    <form name="login" action="/login" method="POST">
+    <form name="login" action="{{url_for("login")}}" method="POST">
       <div class="form-group">
         <label for="EventId">Event Code</label>
         <input type="text" class="form-control" id="EventId" name="EventId" placeholder="EVENTCODE">
@@ -24,7 +24,7 @@
   </div>
   <div class="col-xs-12 col-sm-6">
     <h2>New Users</h2>
-    <form name="register" action="/login" method="POST">
+    <form name="register" action="{{url_for("login")}}" method="POST">
       <div class="form-group">
         <label for="EventId">Event Code</label>
         <input type="text" class="form-control" id="EventId" name="EventId" placeholder="EVENTCODE">

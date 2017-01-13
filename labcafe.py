@@ -154,7 +154,6 @@ app.jinja_env.globals["datetime"] = datetime
 app.jinja_env.globals["timedelta"] = timedelta
 app.jinja_env.globals["tzutc"] = tzutc
 
-
 def is_valid_event_id(event_id):
     """
     Indicates whether this is a valid event id.
@@ -364,13 +363,13 @@ def require_valid_session(f):
         event_id = session.get("EventId", None)
 
         if email is None or event_id is None:
-            return redirect(url_for("/login"))
+            return redirect(url_for("login"))
 
         request.user = get_user(email, event_id)
         if request.user is None:
             del session["Email"]
             del session["EventId"]
-            return redirect(url_for("/login"))
+            return redirect(url_for("login"))
 
         return f(*args, **kw)
 
@@ -827,7 +826,7 @@ def logout(**kw):
 
     if session.modified:
         flash("<b>You have been logged out.</b>", category="info")
-    return redirect(url_for("/login"))
+    return redirect(url_for("login"))
 
 
 def handle_one_time_password_generation(event):
@@ -889,8 +888,7 @@ def handler(event, context):
 
     print("Handling CloudFormation custom resource: %s %s" % (
         request_type, cfn_resource_type))
-    print("ResponseURL: %r" % response_url)
-    print("Event: %r" % (event,))
+    print("ResponseURL: %s" % response_url)
 
     try:
         if cfn_resource_type == "Custom::OneTimePasswordGeneration":
