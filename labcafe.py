@@ -1,5 +1,6 @@
 #!/usr/bin/env python2.7
 from __future__ import absolute_import, print_function
+from base58 import b58encode
 from base64 import b64decode, b64encode
 from botocore.exceptions import BotoCoreError, ClientError
 from boto3.dynamodb.conditions import Attr as AttrCondition
@@ -16,6 +17,7 @@ from flask import (
 from functools import wraps
 from httplib import (
     BAD_REQUEST, FORBIDDEN, OK, SERVICE_UNAVAILABLE, UNAUTHORIZED)
+from json import dumps as json_dumps
 from os import close, environ, fsync, urandom, write
 from passlib.hash import pbkdf2_sha512
 from random import randint
@@ -112,7 +114,6 @@ def set_secret_key(app):
     # This doesn't exist yet. Generate a new key.
     secret_key = urandom(16)
 
-    print(encryption_context)
     # Encrypt it with our KMS key.
     result = kms.encrypt(
         KeyId=app.config["ENCRYPTION_KEY_ID"],
@@ -363,13 +364,13 @@ def require_valid_session(f):
         event_id = session.get("EventId", None)
 
         if email is None or event_id is None:
-            return redirect("/login")
+            return redirect(url_for("/login"))
 
         request.user = get_user(email, event_id)
         if request.user is None:
             del session["Email"]
             del session["EventId"]
-            return redirect("/login")
+            return redirect(url_for("/login"))
 
         return f(*args, **kw)
 
@@ -442,7 +443,7 @@ def ec2_post(**kw):
         return ec2_reboot()
 
     flash("<b>Invalid EC2 action: %s</b>" % action, category="error")
-    return redirect("/")
+    return redirect(url_for("/"))
 
 
 def ec2_clear_user_instance():
@@ -461,7 +462,7 @@ def ec2_launch():
     # Make sure the user doesn't already have an EC2 instance.
     if request.user.get("InstanceId"):
         flash("You already have an EC2 instance assigned.", category="info")
-        return redirect("/")
+        return redirect(url_for("/"))
 
     # Get the instance specs.
     # TODO: Allow AMI parameter and check AllowedAMIs in HPCLab.Events
@@ -594,7 +595,7 @@ chown -R lab%(user_id)d:lab%(user_id)d /efshome/lab%(user_id)d
                 UpdateExpression="SET InstanceId = :instance_id",
                 ExpressionAttributeValues={":instance_id": instance_id},
             )
-            return redirect("/")
+            return redirect(url_for("/"))
         except BotoCoreError as e:
             print(str(e), file=stderr)
             sleep(2)
@@ -603,7 +604,7 @@ chown -R lab%(user_id)d:lab%(user_id)d /efshome/lab%(user_id)d
 
     flash("<b>Failed to record instance launch:</b> %s" %
           escape(last_exception), category="error")
-    return redirect("/")
+    return redirect(url_for("/"))
 
 
 def ec2_terminate():
@@ -611,11 +612,11 @@ def ec2_terminate():
     instance_id = request.user.get("InstanceId")
     if not instance_id:
         flash("You do not have an EC2 instance assigned.", category="info")
-        return redirect("/")
+        return redirect(url_for("/"))
 
     ec2.terminate_instances(InstanceIds=[instance_id])
     ec2_clear_user_instance()
-    return redirect("/")
+    return redirect(url_for("/"))
 
 
 def ec2_start():
@@ -623,11 +624,11 @@ def ec2_start():
     instance_id = request.user.get("InstanceId")
     if not instance_id:
         flash("You do not have an EC2 instance assigned.", category="info")
-        return redirect("/")
+        return redirect(url_for("/"))
 
     ec2.start_instances(InstanceIds=[instance_id])
     flash("Instance started.", category="info")
-    return redirect("/")
+    return redirect(url_for("/"))
 
 
 def ec2_stop():
@@ -635,11 +636,11 @@ def ec2_stop():
     instance_id = request.user.get("InstanceId")
     if not instance_id:
         flash("You do not have an EC2 instance assigned.", category="info")
-        return redirect("/")
+        return redirect(url_for("/"))
 
     ec2.stop_instances(InstanceIds=[instance_id])
     flash("Instance stopped.", category="info")
-    return redirect("/")
+    return redirect(url_for("/"))
 
 
 def ec2_reboot():
@@ -647,14 +648,14 @@ def ec2_reboot():
     instance_id = request.user.get("InstanceId")
     if not instance_id:
         flash("You do not have an EC2 instance assigned.", category="info")
-        return redirect("/")
+        return redirect(url_for("/"))
 
     ec2.reboot_instances(InstanceIds=[instance_id])
     flash('Reboot signal sent to instance.<br><div class="hint">This is'
           'equivalent to pressing Ctrl+Alt+Delete. If the instance hasn\'t '
           'rebooted in four minutes, a hard reset will be issued.</div>',
           category="info")
-    return redirect("/")
+    return redirect(url_for("/"))
 
 
 @app.route("/ssh-key", methods=["GET"])
@@ -808,7 +809,7 @@ def login_post(**kw):
                   "password.</b>", category="error")
             return redo(BAD_REQUEST)
 
-        return redirect("/")
+        return redirect(url_for("/"))
     else:
         flash("<b>Invalid form data sent</b>", category="error")
         return redo(BAD_REQUEST)
@@ -826,7 +827,7 @@ def logout(**kw):
 
     if session.modified:
         flash("<b>You have been logged out.</b>", category="info")
-    return redirect("/login")
+    return redirect(url_for("/login"))
 
 
 def handle_one_time_password_generation(event):
@@ -866,8 +867,13 @@ def handler(event, context):
         try:
             return lambda_handler(event, context)
         except Exception as e:
-            from traceback import print_exc
-            print_exc()
+            from traceback import format_exc
+
+            print("labcafe.handler: Exception from Zappa: %s\n" +
+                  "\n".join([
+                      "labcafe.handler: %s" % line
+                      for line in format_exc().split("\n")]))
+
             raise
 
     # CloudFormation custom resource
@@ -877,15 +883,14 @@ def handler(event, context):
     response_url = event["ResponseURL"]
     stack_id = event["StackId"]
     request_id = event["RequestId"]
-    stack_name = event["ResourceProperties"]["StackName"]
     logical_resource_id = event["LogicalResourceId"]
-    physical_resource_id = event.get(
-        "PhysicalResourceId", stack_name + "-" + logical_resource_id)
-    stack_name = event["StackName"]
+    physical_resource_id = event.get("PhysicalResourceId", "pw-1")
     result = {}
 
     print("Handling CloudFormation custom resource: %s %s" % (
         request_type, cfn_resource_type))
+    print("ResponseURL: %r" % response_url)
+    print("Event: %r" % (event,))
 
     try:
         if cfn_resource_type == "Custom::OneTimePasswordGeneration":
@@ -915,6 +920,13 @@ def handler(event, context):
 
     if reason:
         response["Reason"] = reason
+
+    body = json_dumps(response)
+
+    headers = {
+        "Content-Type": "",
+        "Content-Length": str(len(body))
+    }
 
     r = requests.put(response_url, headers=headers, data=body)
     print("Result: %d %s" % (r.status_code, r.reason))
