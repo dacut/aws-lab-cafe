@@ -52,7 +52,7 @@ build() {
   cd putty-0.67
   chmod ugo+x ./configure
   ./configure --without-gtk
-  make -j 4
+  make -j 16
   cd ..
   cp putty-0.67/puttygen bin/puttygen
 
