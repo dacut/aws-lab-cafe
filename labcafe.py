@@ -14,7 +14,8 @@ from flask import (
     session, url_for,
 )
 from functools import wraps
-from httplib import BAD_REQUEST, FORBIDDEN, OK, SERVICE_UNAVAILABLE, UNAUTHORIZED
+from httplib import (
+    BAD_REQUEST, FORBIDDEN, OK, SERVICE_UNAVAILABLE, UNAUTHORIZED)
 from os import close, environ, fsync, urandom, write
 from passlib.hash import pbkdf2_sha512
 from random import randint
@@ -78,6 +79,7 @@ app.config["ENCRYPTION_CONTEXT"] = {
 }
 app.config["PBKDF2_SHA512_ROUNDS"] = 96000
 
+
 def set_secret_key(app):
     """
     set_secret_key(app)
@@ -123,8 +125,11 @@ def set_secret_key(app):
     # Write this out *only if* nobody else has updated it in the meantime.
     result = ddb_events.update_item(
         Key={"EventId": "_"},
-        UpdateExpression="SET SecretKey = if_not_exists(SecretKey, :new_secret_key)",
-        ExpressionAttributeValues={":new_secret_key": b64encode(secret_key_encrypted)},
+        UpdateExpression=(
+            "SET SecretKey = if_not_exists(SecretKey, :new_secret_key)"),
+        ExpressionAttributeValues={
+            ":new_secret_key": b64encode(secret_key_encrypted)
+        },
         ReturnValues="ALL_NEW")
 
     # Always retrieve the value from DyanmoDB; this might not be our generated
@@ -163,6 +168,7 @@ def is_valid_event_id(event_id):
     return item is not None
 app.jinja_env.globals["is_valid_event_id"] = is_valid_event_id
 
+
 def get_instance_info(instance_id):
     """
     Return the public IP address for a given instance id.
@@ -178,6 +184,7 @@ def get_instance_info(instance_id):
 
     return instances[0]
 app.jinja_env.globals["get_instance_info"] = get_instance_info
+
 
 def get_user(email, event_id):
     """
@@ -196,6 +203,7 @@ def get_user(email, event_id):
 
     return None
 
+
 def login_user(email, password, event_id):
     """
     If this user is known and passes authentication checks, returns details
@@ -207,10 +215,10 @@ def login_user(email, password, event_id):
         ReturnConsumedCapacity="TOTAL",
     )
 
-    # We ALWAYS perform a password verification to prevent timing-based attacks.
-    # If we skip this when a user is not found, an attacker can deduce whether
-    # an email has been registered by monitoring the time it takes for
-    # verification.
+    # We ALWAYS perform a password verification to prevent timing-based
+    # attacks.  If we skip this when a user is not found, an attacker can
+    # deduce whether an email has been registered by monitoring the time it
+    # takes for verification.
     item = response.get("Item")
     if item is None:
         password_hash = invalid_password_hash
@@ -224,6 +232,7 @@ def login_user(email, password, event_id):
     session["EventId"] = event_id
 
     return item
+
 
 def generate_private_public_key(comment="", bits=2048):
     """
@@ -252,6 +261,7 @@ def generate_private_public_key(comment="", bits=2048):
     rmtree(tempdir, ignore_errors=True)
 
     return {"PrivateKey": private_key, "PublicKey": public_key}
+
 
 def register_user(email, password, event_id, full_name, allow_contact):
     """
@@ -311,7 +321,10 @@ def register_user(email, password, event_id, full_name, allow_contact):
             ReturnConsumedCapacity="TOTAL",
         )
     except ClientError as e:
-        error_code = getattr(e, "response", {}).get("Error", {}).get("Code", "")
+        response = getattr(e, "response", {})
+        error = response.get("Error", {})
+        error_code = error.get("Code", "")
+
         if error_code == u"ConditionalCheckFailedException":
             # User already exists.
             return None
@@ -322,6 +335,7 @@ def register_user(email, password, event_id, full_name, allow_contact):
     del user_item["PasswordHash"]
     return user_item
 
+
 # CSRF protection
 @app.before_request
 def csrf_protect():
@@ -330,15 +344,17 @@ def csrf_protect():
         form_token = request.form.get("_csrf_token")
         if not cookie_token or cookie_token != form_token:
             print("CSRF token mismatch:\n    Cookie: %s\n    Form: %s" %
-                (cookie_token, form_token))
+                  (cookie_token, form_token))
             return make_response(render_template("error.html"), FORBIDDEN)
     return
+
 
 def generate_csrf_token():
     if "_csrf_token" not in session:
         session["_csrf_token"] = b64encode(urandom(36))
     return session["_csrf_token"]
 app.jinja_env.globals["csrf_token"] = generate_csrf_token
+
 
 def require_valid_session(f):
     @wraps(f)
@@ -359,6 +375,7 @@ def require_valid_session(f):
 
     return wrapper
 
+
 @app.route("/", methods=["GET"])
 @require_valid_session
 def index(**kw):
@@ -366,8 +383,8 @@ def index(**kw):
     if instance_id:
         instance_info = get_instance_info(instance_id)
 
-        if (instance_info is None or
-            instance_info["State"]["Name"] == u"terminated"):
+        if (instance_info is None or (
+                instance_info["State"]["Name"] == u"terminated")):
             ec2_clear_user_instance()
             instance_id = None
     else:
@@ -377,10 +394,12 @@ def index(**kw):
         "index.html", user=request.user, instance_id=instance_id,
         instance_info=instance_info)
 
+
 @app.route("/screenshot", methods=["GET"])
 @require_valid_session
 def screenshot(**kw):
     return render_template("screenshot.html", user=request.user)
+
 
 @app.route("/ec2/screenshot", methods=["GET"])
 @require_valid_session
@@ -405,6 +424,7 @@ def ec2_screenshot(**kw):
             "Content-Type": "image/jpeg"
         }))
 
+
 @app.route("/ec2", methods=["POST"])
 @require_valid_session
 def ec2_post(**kw):
@@ -424,6 +444,7 @@ def ec2_post(**kw):
     flash("<b>Invalid EC2 action: %s</b>" % action, category="error")
     return redirect("/")
 
+
 def ec2_clear_user_instance():
     ddb_users.update_item(
         Key={
@@ -434,6 +455,7 @@ def ec2_clear_user_instance():
         ReturnConsumedCapacity="TOTAL",
     )
     return
+
 
 def ec2_launch():
     # Make sure the user doesn't already have an EC2 instance.
@@ -484,7 +506,8 @@ mount -t nfs4 \
 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 \
 %(az)s.%(efs_id)s.efs.%(region)s.amazonaws.com:/ /efshome
 echo %(az)s.%(efs_id)s.efs.%(region)s.amazonaws.com:/ /efshome nfs \
-nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 0 0 >> /etc/fstab
+nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 0 0 >> \
+/etc/fstab
 mkdir -p /efshome/lab%(user_id)d/.ssh
 ln -s /efshome/lab%(user_id)d /home/lab%(user_id)d
 groupadd --gid %(user_id)d lab%(user_id)d
@@ -497,14 +520,14 @@ cat >> /home/lab%(user_id)d/.ssh/authorized_keys << .EOF
 chmod 0755 /efshome/lab%(user_id)d/.ssh
 chmod 0644 /efshome/lab%(user_id)d/.ssh/authorized_keys
 chown -R lab%(user_id)d:lab%(user_id)d /efshome/lab%(user_id)d
-""" % {
-    "az": az,
-    "efs_id": efs_id,
-    "fullname_sanitized": fullname_sanitized,
-    "public_key": request.user["SSHPublicKey"],
-    "region": region,
-    "user_id": request.user["UserId"],
-}
+    """ % {
+        "az": az,
+        "efs_id": efs_id,
+        "fullname_sanitized": fullname_sanitized,
+        "public_key": request.user["SSHPublicKey"],
+        "region": region,
+        "user_id": request.user["UserId"],
+    }
 
     run_kw = dict(
         ImageId=ami,
@@ -582,6 +605,7 @@ chown -R lab%(user_id)d:lab%(user_id)d /efshome/lab%(user_id)d
           escape(last_exception), category="error")
     return redirect("/")
 
+
 def ec2_terminate():
     # Make sure the user has an EC2 instance.
     instance_id = request.user.get("InstanceId")
@@ -592,6 +616,7 @@ def ec2_terminate():
     ec2.terminate_instances(InstanceIds=[instance_id])
     ec2_clear_user_instance()
     return redirect("/")
+
 
 def ec2_start():
     # Make sure the user has an EC2 instance.
@@ -604,6 +629,7 @@ def ec2_start():
     flash("Instance started.", category="info")
     return redirect("/")
 
+
 def ec2_stop():
     # Make sure the user has an EC2 instance.
     instance_id = request.user.get("InstanceId")
@@ -614,6 +640,7 @@ def ec2_stop():
     ec2.stop_instances(InstanceIds=[instance_id])
     flash("Instance stopped.", category="info")
     return redirect("/")
+
 
 def ec2_reboot():
     # Make sure the user has an EC2 instance.
@@ -628,6 +655,7 @@ def ec2_reboot():
           'rebooted in four minutes, a hard reset will be issued.</div>',
           category="info")
     return redirect("/")
+
 
 @app.route("/ssh-key", methods=["GET"])
 @require_valid_session
@@ -671,9 +699,11 @@ def get_ssh_key(**kw):
 
     return make_response((result, OK, headers))
 
+
 @app.route("/login", methods=["GET"])
 def login(**kw):
     return render_template("login.html", form={})
+
 
 @app.route("/login", methods=["POST"])
 def login_post(**kw):
@@ -697,7 +727,7 @@ def login_post(**kw):
 
         if not is_valid_event_id(event_id):
             flash("<b>Unknown event code %s</b>" % escape(event_id),
-                category="error")
+                  category="error")
             return redo(UNAUTHORIZED)
 
         user = login_user(email, password, event_id)
@@ -719,7 +749,7 @@ def login_post(**kw):
 
         if not is_valid_event_id(event_id):
             flash("<b>Unknown event code %s</b>" % escape(event_id),
-                category="error")
+                  category="error")
             return redo(UNAUTHORIZED)
 
         if not validate_email(email):
@@ -738,30 +768,40 @@ def login_post(**kw):
             symbol_seen |= not(c.isupper() and c.islower() and c.isdigit())
 
         if not upper_seen:
-            password_errors.append("Password does not contain an uppercase letter.")
+            password_errors.append(
+                "Password does not contain an uppercase letter.")
+
         if not lower_seen:
-            password_errors.append("Password does not contain a lowercase letter.")
+            password_errors.append(
+                "Password does not contain a lowercase letter.")
+
         if not digit_seen:
             password_errors.append("Password does not contain a digit.")
-        #if not symbol_seen:
-        #    password_errors.append("Password does not contain a symbol.")
+
+        if not symbol_seen:
+            password_errors.append("Password does not contain a symbol.")
+
         try:
             if not password_errors:
                 VeryFascistCheck(password)
         except ValueError:
             password_errors.append(
-                "Password is easily guessed "
-                "(was guessed by <a href=\"https://www.cyberciti.biz/security/linux-password-strength-checker/\">Cracklib</a>).")
+                "Password is easily guessed (was guessed by "
+                "<a href=\"https://www.cyberciti.biz/security/"
+                "linux-password-strength-checker/\">Cracklib</a>).")
 
         if password != password_verify:
             password_errors.append("Passwords do not match.")
 
         if password_errors:
-            flash("<b>Invalid password:</b><br>" + "<br>".join(password_errors),
+            flash("<b>Invalid password:</b><br>" +
+                  "<br>".join(password_errors),
                   category="error")
             return redo(BAD_REQUEST)
 
-        user = register_user(email, password, event_id, full_name, allow_contact)
+        user = register_user(
+            email, password, event_id, full_name, allow_contact)
+
         if user is None:
             flash("<b>User is already registered. "
                   "<a href='/forgot-password'>Click here</a> to reset your "
@@ -772,6 +812,7 @@ def login_post(**kw):
     else:
         flash("<b>Invalid form data sent</b>", category="error")
         return redo(BAD_REQUEST)
+
 
 @app.route("/logout", methods=["GET", "POST"])
 def logout(**kw):
@@ -786,6 +827,7 @@ def logout(**kw):
     if session.modified:
         flash("<b>You have been logged out.</b>", category="info")
     return redirect("/login")
+
 
 def handle_one_time_password_generation(event):
     request_type = event["RequestType"]
@@ -815,6 +857,7 @@ def handle_one_time_password_generation(event):
         return {}
     else:
         raise RuntimeError("Unknown request type %s" % request_type)
+
 
 def handler(event, context):
     cfn_resource_type = event.get("ResourceType")
@@ -860,7 +903,7 @@ def handler(event, context):
 
     physical_resource_id = result.get(
         "PhysicalResourceId", physical_resource_id)
-        
+
     response = {
         "Status": status,
         "PhysicalResourceId": physical_resource_id,
