@@ -18,7 +18,7 @@ $("#console-refresh").click(function () {
   $("#console-refresh").addClass("hidden");
   $("#console-loading").removeClass("hidden");
 
-  var downloadingImage = $("<img>").attr("src", "{{prefix}}ec2/screenshot").on("load", function () {
+  var downloadingImage = $("<img>").attr("src", "{{url_for("ec2/screenshot")}}").on("load", function () {
     $("#screenshot").attr("src", $(this).attr("src"));
     $("#console-refresh").removeClass("hidden");
     $("#console-loading").addClass("hidden");

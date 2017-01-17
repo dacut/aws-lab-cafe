@@ -5,9 +5,9 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="{{static_prefix}}css/bootstrap.min.css">
-    <link rel="stylesheet" href="{{static_prefix}}css/bootstrap-theme.min.css">
-    <link rel="stylesheet" href="{{static_prefix}}css/hpclab.css">
+    <link rel="stylesheet" href="{{url_for("static/css/bootstrap.min.css")}}">
+    <link rel="stylesheet" href="{{url_for("static/css/bootstrap-theme.min.css")}}">
+    <link rel="stylesheet" href="{{url_for("static/css/hpclab.css")}}">
     <title>{% block title %}{% endblock title %}</title>
     {% endblock head %}
   </head>
@@ -22,24 +22,25 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="#">Portable HPC Lab</a>
+          <a class="navbar-brand" href="#">{{site_info.name}}</a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
-            <li class="{% block navbar_home_class %}{% endblock %}"><a href="{% block navbar_home_link %}{{prefix}}{% endblock %}">Home</a></li>
-            <li class="{% block navbar_screenshot_class %}{% endblock %}"><a href="{% block navbar_screenshot_link %}{{prefix}}screenshot{% endblock %}">Console Screenshot</a></li>
+            <li class="{% block navbar_home_class %}{% endblock %}"><a href="{% block navbar_home_link %}{{url_for("")}}{% endblock %}">Home</a></li>
+            <li class="{% block navbar_screenshot_class %}{% endblock %}"><a href="{% block navbar_screenshot_link %}{{url_for("screenshot")}}{% endblock %}">Console Screenshot</a></li>
           </ul>
           <ul class="nav navbar-nav navbar-right">
             <li class="{% block navbar_account_class %}{% endblock %}{% if request.user %} dropdown{% endif %}">
+              <a href="{% block navbar_admin_link %}{{url_for("admin")}}{% endblock %}">Admin</a>
               {% if request.user %}
               <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                 {{- request.user["FullName"]|e -}} <span class="caret"></span></a>
               <ul class="dropdown-menu">
-                <li><a href="{{prefix}}account">Account settings</a></li>
-                <li><a href="{{prefix}}logout">Logout</a></li>
+                <li><a href="{{url_for("account")}}">Account settings</a></li>
+                <li><a href="{{url_for("logout")}}">Logout</a></li>
               </ul>
               {% else %}
-              <a href="{% block navbar_account_link %}{{prefix}}login{% endblock %}">Login</a></li>
+              <a href="{% block navbar_account_link %}{{url_for("login")}}{% endblock %}">Login</a></li>
               {% endif%}
             </li>
           </ul>
@@ -67,10 +68,10 @@
     </div>
     {% endblock body %}
     {% block bodytailscripts %}
-    <script src="{{static_prefix}}js/jquery-3.1.1.js"></script>
-    <script src="{{static_prefix}}js/bootstrap.min.js"></script>
-    <script src="{{static_prefix}}js/underscore-min.js"></script>
-    <script src="{{static_prefix}}js/pagination.js"></script>
+    <script src="{{url_for("static/js/jquery-3.1.1.js")}}"></script>
+    <script src="{{url_for("static/js/bootstrap.min.js")}}"></script>
+    <script src="{{url-for("static/js/underscore-min.js")}}"></script>
+    <script src="{{url-for("static/js/pagination.js")}}"></script>
     {% endblock bodytailscripts %}
     {% block pagescripts %}{% endblock pagescripts %}
   </body>
