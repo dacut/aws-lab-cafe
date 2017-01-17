@@ -23,7 +23,7 @@ from passlib.hash import pbkdf2_sha512
 from random import randint
 import requests
 from shutil import rmtree
-from six import text_type
+from six import iteritems, text_type
 from string import ascii_letters, digits
 from subprocess import Popen, PIPE
 from sys import exit, stderr, stdin, stdout
@@ -147,10 +147,14 @@ def set_secret_key(app):
 
 set_secret_key(app)
 
-# Items required by the Jijna templates
+# Items required by the Jinja templates
 app.jinja_env.globals["static_prefix"] = "static/"
 app.jinja_env.globals["prefix"] = "/"
 app.jinja_env.globals["datetime"] = datetime
+app.jinja_env.globals["site_info"] = {
+    "name": "Lab Cafe Instance",
+    "organization": "lab administrators",
+}
 app.jinja_env.globals["timedelta"] = timedelta
 app.jinja_env.globals["tzutc"] = tzutc
 
@@ -349,11 +353,50 @@ def csrf_protect():
     return
 
 
+# Site information
+@app.before_request
+def get_site_info():
+    """
+    Populate the Jinja site_info variable each time a request is rendered.
+    This has to be re-populated since administrator changes may change what's
+    displayed.
+    """
+    try:
+        result = ddb_events.get_item(Key={"EventId": "_"}, ConsistentRead=False,
+                                     ProjectionExpression="SiteInfo")
+        site_info = result.get("Item", {}).get("SiteInfo", {})
+
+        updates = {}
+        for key, value in iteritems(site_info):
+            # Convert the key from camel-case to Python-case.
+            key = key[:1].lower() + (
+                "".join([(c if not c.isupper() else "_" + c.lower())
+                         for c in key[1:]]))
+            updates[key] = value
+
+        app.jinja_env.globals["site_info"].update(updates)
+    except ClientError as e:
+        # If we exceed the request rate on DynamoDB, just use the last-fetched
+        # values.
+        app.logger.warning("Failed to retrieve site information: %s", e)
+
+    return
+
+
 def generate_csrf_token():
     if "_csrf_token" not in session:
         session["_csrf_token"] = b64encode(urandom(36))
     return session["_csrf_token"]
 app.jinja_env.globals["csrf_token"] = generate_csrf_token
+
+
+def csrf_field():
+    """
+    Create a hidden form field with the CSRF token.
+    """
+    return ('<input type="hidden" id="_csrf_token" name="_csrf_token" '
+            'value="' + generate_csrf_token() + '">')
+app.jinja_env.globals["csrf_field"] = csrf_field
 
 
 def require_valid_session(f):
