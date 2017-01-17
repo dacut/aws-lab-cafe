@@ -37,8 +37,8 @@ prebuild() {
   source venv/bin/activate
   pip install -r requirements.txt
 
-  rm -f venv/lib/python2.7/site-packages/zappa/cli.pyc
-  patch -p 0 < zappa.patch
+  find venv/lib/python2.7/site-packages -name \*.pyc -o -name \*.pyo | xargs rm -f
+  patch -p 0 < all.patch
 }
 
 build() {
