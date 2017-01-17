@@ -36,6 +36,7 @@ prebuild() {
   virtualenv venv
   source venv/bin/activate
   pip install -r requirements.txt
+  pip install https://github.com/miserlou/Zappa/zipball/master
 
   find venv/lib/python2.7/site-packages -name \*.pyc -o -name \*.pyo | xargs rm -f
   patch -p 0 < all.patch
