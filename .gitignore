@@ -103,3 +103,6 @@ putty-*/psftp
 putty-*/puttygen
 putty-*/stamp-h1
 putty-*/uxconfig.h
+
+# Emacs
+*~
