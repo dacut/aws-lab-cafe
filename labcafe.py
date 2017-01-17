@@ -18,6 +18,7 @@ from functools import wraps
 from httplib import (
     BAD_REQUEST, FORBIDDEN, OK, SERVICE_UNAVAILABLE, UNAUTHORIZED)
 from json import dumps as json_dumps
+from markupsafe import Markup
 from os import close, environ, fsync, urandom, write
 from passlib.hash import pbkdf2_sha512
 from random import randint
@@ -394,8 +395,8 @@ def csrf_field():
     """
     Create a hidden form field with the CSRF token.
     """
-    return ('<input type="hidden" id="_csrf_token" name="_csrf_token" '
-            'value="' + generate_csrf_token() + '">')
+    return Markup('<input type="hidden" id="_csrf_token" name="_csrf_token" '
+                  'value="' + generate_csrf_token() + '">')
 app.jinja_env.globals["csrf_field"] = csrf_field
 
 
