@@ -438,6 +438,11 @@ def index(**kw):
         instance_info=instance_info)
 
 
+@app.route("/admin", methods=["GET"])
+def admin(**kw):
+    return render_template("index.html")
+
+
 @app.route("/screenshot", methods=["GET"])
 @require_valid_session
 def screenshot(**kw):

@@ -85,7 +85,7 @@
         <ol>
           <li>Download your SSH key by clicking on "Download for Mac/Linux" on the left.</li>
           <li>Open up a terminal. This will be in <b>Applications &gt; Utilities &gt; Terminal</b>.
-            <img src="{{url_for("static/images/macos-terminal-launch.png")}}" width="600" height="304">
+            <img src="{{url_for("static", filename="/images/macos-terminal-launch.png")}}" width="600" height="304">
           </li>
           <li>Locate the SSH private key file. This is usually <br>
             <code>~/Downloads/{{user["EventId"]}}-private.pem</code></li>
@@ -107,7 +107,7 @@
         <ol>
           <li>Download your SSH key by clicking on "Download for Mac/Linux" on the left.</li>
           <li>Open up a terminal. On Ubuntu Linux, click on the Ubuntu logo in the upper left corner and search for "terminal". Click on the Terminal icon.
-            <img src="{{url_for("static/images/ubuntu-terminal-launch.png")}}" width="411" height="245">
+            <img src="{{url_for("static", filename="/images/ubuntu-terminal-launch.png")}}" width="411" height="245">
           </li>
           <li>Locate the SSH private key file. This is usually<br>
             <code>~/Downloads/{{user["EventId"]}}-private.pem</code></li>
@@ -144,7 +144,7 @@
               <li>Download your SSH key by clicking on <b>Download for Windows (PuTTY)</b> on the left.</li>
               <li><a href="https://the.earth.li/~sgtatham/putty/latest/x86/putty.exe">Click here</a> to download the PuTTY executable.</li>
               <li>Click on the download link to start PuTTY. If you see a security dialog, select <b>Open</b> or <b>Run</b>.<br>
-                <img src="{{url_for("static/images/windows-putty-launch-0.png")}}" width="400" height="301">
+                <img src="{{url_for("static", filename="/images/windows-putty-launch-0.png")}}" width="400" height="301">
               </li>
             </ol>
           </div>
@@ -153,7 +153,7 @@
               <li>In the <b>Basic options for your PuTTY session</b> pane, type the IP address from the left into the
                 <b>Host Name (or IP address)</b> text box:
                 {% if instance_info and instance_info["PublicIpAddress"] -%}<br><code>{{- instance_info["PublicIpAddress"] -}}</code>{%- endif %}
-                <img src="{{url_for("static/images/windows-putty-launch-1.png")}}" width="500" height="480">
+                <img src="{{url_for("static", filename="/images/windows-putty-launch-1.png")}}" width="500" height="480">
               </li>
             </ol>
           </div>
@@ -163,7 +163,7 @@
               <li>In the <b>Data to send to the server</b> pane, type your username from the left into the <b>Auto-login username</b>
                 text box: <br>
                 <code>lab{{ user["UserId"] }}</code>
-                <img src="{{url_for("static/images/windows-putty-launch-2.png")}}" width="500" height="480">
+                <img src="{{url_for("static", filename="/images/windows-putty-launch-2.png")}}" width="500" height="480">
               </li>
             </ol>
           </div>
@@ -173,7 +173,7 @@
                 expand it.</li>
               <li>In the <b>SSH</b> subcategory, click on the <b>Auth</b> sub-subcategory.</li>
               <li>In the <b>Options controlling SSH authentication</b> pane, click on the <b>Browse</b> button.<br>
-                <img src="{{url_for("static/images/windows-putty-launch-3.png")}}" width="500" height="480">
+                <img src="{{url_for("static", filename="/images/windows-putty-launch-3.png")}}" width="500" height="480">
               </li>
             </ol>
           </div>
@@ -182,14 +182,14 @@
               <li>In the file dialog, find the SSH key you downloaded in step 1. This will usually be in the <b>Downloads</b> folder and
                 will probably be named <code>{{ user["EventId"] }}.ppk</code></li>
               <li>Click on <b>Open</b>.<br>
-                <img src="{{url_for("static/images/windows-putty-launch-4.png")}}" width="600" height="462">
+                <img src="{{url_for("static", filename="/images/windows-putty-launch-4.png")}}" width="600" height="462">
               </li>
             </ol>
           </div>
           <div role="tabpanel" class="tab-pane" id="windows-6">
             <ol start="12">
               <li>Click on <b>Open</b>. You will then get a shell prompt from your EC2 instance.<br>
-                <img src="{{url_for("static/images/windows-putty-launch-5.png")}}" width="500" height="480">
+                <img src="{{url_for("static", filename="/images/windows-putty-launch-5.png")}}" width="500" height="480">
               </li>
             </ol>
           </div>
