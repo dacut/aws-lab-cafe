@@ -1,0 +1,25 @@
+{% extends "frame.html" %}
+{% block title %}Administration{% endblock %}
+{% block navbar_admin_class %}active{% endblock %}
+{% block navbar_admin_link %}#{% endblock %}
+{% block body_container %}
+<div class="row">
+  <div class="col-xs-12 col-sm-6">
+    <h2>Initial Administrator Setup</h2>
+    <form name="admin" action="{{url_for("otp")}}" method="POST">
+      <div class="form-group">
+        <label for="Email">Email</label>
+        <input type="email" class="form-control" id="Email" name="Email" placeholder="user@domain" value="{{email}}">
+      </div>
+      <div class="form-group">
+        <label for="Password">Password</label>
+        <input type="password" class="form-control" id="Password" name="Password" placeholder="password">
+      </div>
+      <input type="hidden" name="Action" value="OTPCreate">
+      {{csrf_field()}}
+      <input type="hidden" name="OTP" value="{{otp}}">
+      <input type="submit" class="btn btn-primary" value="Submit">
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -30,7 +30,7 @@
             <li class="{% block navbar_screenshot_class %}{% endblock %}"><a href="{% block navbar_screenshot_link %}{{url_for("screenshot")}}{% endblock %}">Console Screenshot</a></li>
           </ul>
           <ul class="nav navbar-nav navbar-right">
-            <li class="{% block navbar_admin %}{% endblock %}">
+            <li class="{% block navbar_admin_class %}{% endblock %}">
               <a href="{% block navbar_admin_link %}{{url_for("admin")}}{% endblock %}">Admin</a>
             </li>
             <li class="{% block navbar_account_class %}{% endblock %}{% if request.user %} dropdown{% endif %}">

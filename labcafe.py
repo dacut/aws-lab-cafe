@@ -444,6 +444,28 @@ def admin(**kw):
     return render_template("index.html")
 
 
+@app.route("/otp", methods=["GET"])
+def otp_get(otp=None, **kw):
+    if not otp:
+        return redirect(url_for("login"))
+
+    # Does this match the current one-time password?
+    result = ddb_events.get_item(Key={"EventId": "_"})
+    item = result.get("Item", {})
+    otp_hash = item.get("OneTimePasswordHash")
+
+    if not otp_hash:
+        flash("<b>One-time password expired. Login using your administrative "
+              "credentials.</b>",category="error")
+        return redirect(url_for("admin"))
+
+    if not pbkdf2_sha512.verify(otp, otp_hash):
+        flash("<b>Invalid one-time password.</b>", category="error")
+        return (render_template("error.html"), UNAUTHORIZED, {})
+
+    return render_template("admin_otp.html", otp=otp)
+
+
 @app.route("/screenshot", methods=["GET"])
 @require_valid_session
 def screenshot(**kw):
@@ -491,7 +513,7 @@ def ec2_post(**kw):
         return ec2_reboot()
 
     flash("<b>Invalid EC2 action: %s</b>" % action, category="error")
-    return redirect(url_for("/"))
+    return redirect(url_for("index"))
 
 
 def ec2_clear_user_instance():
@@ -510,7 +532,7 @@ def ec2_launch():
     # Make sure the user doesn't already have an EC2 instance.
     if request.user.get("InstanceId"):
         flash("You already have an EC2 instance assigned.", category="info")
-        return redirect(url_for("/"))
+        return redirect(url_for("index"))
 
     # Get the instance specs.
     # TODO: Allow AMI parameter and check AllowedAMIs in HPCLab.Events
@@ -643,7 +665,7 @@ chown -R lab%(user_id)d:lab%(user_id)d /efshome/lab%(user_id)d
                 UpdateExpression="SET InstanceId = :instance_id",
                 ExpressionAttributeValues={":instance_id": instance_id},
             )
-            return redirect(url_for("/"))
+            return redirect(url_for("index"))
         except BotoCoreError as e:
             print(str(e), file=stderr)
             sleep(2)
@@ -652,7 +674,7 @@ chown -R lab%(user_id)d:lab%(user_id)d /efshome/lab%(user_id)d
 
     flash("<b>Failed to record instance launch:</b> %s" %
           escape(last_exception), category="error")
-    return redirect(url_for("/"))
+    return redirect(url_for("index"))
 
 
 def ec2_terminate():
@@ -660,11 +682,11 @@ def ec2_terminate():
     instance_id = request.user.get("InstanceId")
     if not instance_id:
         flash("You do not have an EC2 instance assigned.", category="info")
-        return redirect(url_for("/"))
+        return redirect(url_for("index"))
 
     ec2.terminate_instances(InstanceIds=[instance_id])
     ec2_clear_user_instance()
-    return redirect(url_for("/"))
+    return redirect(url_for("index"))
 
 
 def ec2_start():
@@ -672,11 +694,11 @@ def ec2_start():
     instance_id = request.user.get("InstanceId")
     if not instance_id:
         flash("You do not have an EC2 instance assigned.", category="info")
-        return redirect(url_for("/"))
+        return redirect(url_for("index"))
 
     ec2.start_instances(InstanceIds=[instance_id])
     flash("Instance started.", category="info")
-    return redirect(url_for("/"))
+    return redirect(url_for("index"))
 
 
 def ec2_stop():
@@ -684,11 +706,11 @@ def ec2_stop():
     instance_id = request.user.get("InstanceId")
     if not instance_id:
         flash("You do not have an EC2 instance assigned.", category="info")
-        return redirect(url_for("/"))
+        return redirect(url_for("index"))
 
     ec2.stop_instances(InstanceIds=[instance_id])
     flash("Instance stopped.", category="info")
-    return redirect(url_for("/"))
+    return redirect(url_for("index"))
 
 
 def ec2_reboot():
@@ -696,14 +718,14 @@ def ec2_reboot():
     instance_id = request.user.get("InstanceId")
     if not instance_id:
         flash("You do not have an EC2 instance assigned.", category="info")
-        return redirect(url_for("/"))
+        return redirect(url_for("index"))
 
     ec2.reboot_instances(InstanceIds=[instance_id])
     flash('Reboot signal sent to instance.<br><div class="hint">This is'
           'equivalent to pressing Ctrl+Alt+Delete. If the instance hasn\'t '
           'rebooted in four minutes, a hard reset will be issued.</div>',
           category="info")
-    return redirect(url_for("/"))
+    return redirect(url_for("index"))
 
 
 @app.route("/ssh-key", methods=["GET"])
@@ -857,7 +879,7 @@ def login_post(**kw):
                   "password.</b>", category="error")
             return redo(BAD_REQUEST)
 
-        return redirect(url_for("/"))
+        return redirect(url_for("index"))
     else:
         flash("<b>Invalid form data sent</b>", category="error")
         return redo(BAD_REQUEST)
