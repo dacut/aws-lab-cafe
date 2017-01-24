@@ -6,18 +6,27 @@
 <div class="row">
   <div class="col-xs-12 col-sm-6">
     <h2>Initial Administrator Setup</h2>
+    Enter your username and a password. You will use this to administrate this website.
     <form name="admin" action="{{url_for("otp")}}" method="POST">
       <div class="form-group">
         <label for="Email">Email</label>
-        <input type="email" class="form-control" id="Email" name="Email" placeholder="user@domain" value="{{email}}">
+        <input type="email" class="form-control" id="Email" name="Email" placeholder="user@domain" value="{{form.get("Email")}}">
       </div>
       <div class="form-group">
         <label for="Password">Password</label>
-        <input type="password" class="form-control" id="Password" name="Password" placeholder="password">
+        <input type="password" class="form-control" id="Password" name="Password">
+        <div class="hint">
+          Passwords are case sensitive, must be at least {{site_info.min_password_length}} characters long,
+          and must contain a mixture of upper- and lower-case letters, digits, and symbols.
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="Password">Password Confirmation</label>
+        <input type="password" class="form-control" id="PasswordVerify" name="PasswordVerify">
       </div>
       <input type="hidden" name="Action" value="OTPCreate">
       {{csrf_field()}}
-      <input type="hidden" name="OTP" value="{{otp}}">
+      <input type="hidden" name="OTP" value="{{form.get("OTP")}}">
       <input type="submit" class="btn btn-primary" value="Submit">
     </form>
   </div>

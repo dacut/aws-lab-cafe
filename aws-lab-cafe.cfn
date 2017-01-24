@@ -307,10 +307,8 @@ Resources:
         WriteCapacityUnits: !Ref UserTableWCU
       TableName: !Join ["", [ !Ref "AWS::StackName", ".Users"]]
 Outputs:
-  OneTimePassword:
-    Description: Password to use to administrate this site.
-    Value: !GetAtt OneTimePasswordGeneration.Password
   SiteURL:
     Description: Browse to this URL to manage your site.
     Value: !Join ["", ["https://", !Ref "Api", ".execute-api.",
-                       !Ref "AWS::Region", ".amazonaws.com/prod"]]
+                       !Ref "AWS::Region", ".amazonaws.com/prod/admin/login?",
+                       "otp=", !GetAtt OneTimePasswordGeneration.Password]]

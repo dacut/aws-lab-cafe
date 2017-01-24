@@ -39,7 +39,10 @@ if "ENCRYPTION_KEY_ID" not in environ:
     exit(1)
 
 # Number of API retries
-n_retries = 5
+N_RETRIES = 5
+
+# Minimum password length.
+MIN_PASSWORD_LENGTH = 12
 
 # You shouldn't need to customize anything below this line.
 b3 = Boto3Session()
@@ -155,6 +158,7 @@ app.jinja_env.globals["datetime"] = datetime
 app.jinja_env.globals["site_info"] = {
     "name": "Lab Cafe Instance",
     "organization": "lab administrators",
+    "min_password_length": MIN_PASSWORD_LENGTH,
 }
 app.jinja_env.globals["timedelta"] = timedelta
 app.jinja_env.globals["tzutc"] = tzutc
@@ -163,6 +167,10 @@ def is_valid_event_id(event_id):
     """
     Indicates whether this is a valid event id.
     """
+    if event_id == "_":
+        # Don't allow administrative events.
+        return False
+
     response = ddb_events.get_item(
         Key={"EventId": event_id},
         ProjectionExpression="EventName",
@@ -341,6 +349,51 @@ def register_user(email, password, event_id, full_name, allow_contact):
     return user_item
 
 
+def get_password_errors(password, password_verify):
+    """
+    Return a list of errors for the given password. If the returned list is
+    empty, no errors were found.
+    """
+    password_errors = []
+    if len(password) < MIN_PASSWORD_LENGTH:
+        password_errors.append("Password is too short.")
+
+    upper_seen = lower_seen = digit_seen = symbol_seen = False
+    for c in password:
+        upper_seen |= c.isupper()
+        lower_seen |= c.islower()
+        digit_seen |= c.isdigit()
+        symbol_seen |= not(c.isupper() and c.islower() and c.isdigit())
+
+    if not upper_seen:
+        password_errors.append(
+            "Password does not contain an uppercase letter.")
+
+    if not lower_seen:
+        password_errors.append(
+            "Password does not contain a lowercase letter.")
+
+    if not digit_seen:
+        password_errors.append("Password does not contain a digit.")
+
+    if not symbol_seen:
+        password_errors.append("Password does not contain a symbol.")
+
+    try:
+        if not password_errors:
+            VeryFascistCheck(password)
+    except ValueError:
+        password_errors.append(
+            "Password is easily guessed (was guessed by "
+            "<a href=\"https://www.cyberciti.biz/security/"
+            "linux-password-strength-checker/\">Cracklib</a>).")
+
+    if password != password_verify:
+        password_errors.append("Passwords do not match.")
+
+    return password_errors
+
+
 # CSRF protection
 @app.before_request
 def csrf_protect():
@@ -442,28 +495,6 @@ def index(**kw):
 @app.route("/admin", methods=["GET"])
 def admin(**kw):
     return render_template("index.html")
-
-
-@app.route("/otp", methods=["GET"])
-def otp_get(otp=None, **kw):
-    if not otp:
-        return redirect(url_for("login"))
-
-    # Does this match the current one-time password?
-    result = ddb_events.get_item(Key={"EventId": "_"})
-    item = result.get("Item", {})
-    otp_hash = item.get("OneTimePasswordHash")
-
-    if not otp_hash:
-        flash("<b>One-time password expired. Login using your administrative "
-              "credentials.</b>",category="error")
-        return redirect(url_for("admin"))
-
-    if not pbkdf2_sha512.verify(otp, otp_hash):
-        flash("<b>Invalid one-time password.</b>", category="error")
-        return (render_template("error.html"), UNAUTHORIZED, {})
-
-    return render_template("admin_otp.html", otp=otp)
 
 
 @app.route("/screenshot", methods=["GET"])
@@ -655,7 +686,7 @@ chown -R lab%(user_id)d:lab%(user_id)d /efshome/lab%(user_id)d
     ])
 
     last_exception = None
-    for retry in range(n_retries):
+    for retry in range(N_RETRIES):
         try:
             ddb_users.update_item(
                 Key={
@@ -783,7 +814,6 @@ def login_post(**kw):
     email = request.form.get("Email")
     full_name = request.form.get("FullName")
     password = request.form.get("Password")
-    action = request.form.get("Action")
     password_verify = request.form.get("PasswordVerify")
     allow_contact = request.form.get("AllowContact")
 
@@ -827,42 +857,7 @@ def login_post(**kw):
             flash("<b>Invalid email address</b>", category="error")
             return redo(BAD_REQUEST)
 
-        password_errors = []
-        if len(password) < 8:
-            password_errors.append("Password is too short.")
-
-        upper_seen = lower_seen = digit_seen = symbol_seen = False
-        for c in password:
-            upper_seen |= c.isupper()
-            lower_seen |= c.islower()
-            digit_seen |= c.isdigit()
-            symbol_seen |= not(c.isupper() and c.islower() and c.isdigit())
-
-        if not upper_seen:
-            password_errors.append(
-                "Password does not contain an uppercase letter.")
-
-        if not lower_seen:
-            password_errors.append(
-                "Password does not contain a lowercase letter.")
-
-        if not digit_seen:
-            password_errors.append("Password does not contain a digit.")
-
-        if not symbol_seen:
-            password_errors.append("Password does not contain a symbol.")
-
-        try:
-            if not password_errors:
-                VeryFascistCheck(password)
-        except ValueError:
-            password_errors.append(
-                "Password is easily guessed (was guessed by "
-                "<a href=\"https://www.cyberciti.biz/security/"
-                "linux-password-strength-checker/\">Cracklib</a>).")
-
-        if password != password_verify:
-            password_errors.append("Passwords do not match.")
+        password_errors = get_password_errors(password, password_verify)
 
         if password_errors:
             flash("<b>Invalid password:</b><br>" +
@@ -898,6 +893,89 @@ def logout(**kw):
     if session.modified:
         flash("<b>You have been logged out.</b>", category="info")
     return redirect(url_for("login"))
+
+
+@app.route("/admin/login", methods=["GET"])
+def admin_login_get(otp=None, **kw):
+    if otp:
+        # Attempting to use one-time password login.
+        # Does this match the current one-time password?
+        result = ddb_events.get_item(Key={"EventId": "_"})
+        item = result.get("Item", {})
+        otp_hash = item.get("OneTimePasswordHash")
+
+        if not otp_hash:
+            flash("<b>One-time password expired. Login using your administrative "
+                  "credentials.</b>",category="error")
+            status = UNAUTHORIZED
+        elif not pbkdf2_sha512.verify(otp, otp_hash):
+            flash("<b>Invalid one-time password.</b>", category="error")
+            status = UNAUTHORIZED
+
+        return render_template("admin_otp.html", form={"OTP": otp})
+
+
+@app.route("/admin/login", methods=["POST"])
+def admin_login_post(**kw):
+    action = request.form.get("Action")
+    email = request.form.get("Email")
+    password = request.form.get("Password")
+    password_verify = request.form.get("PasswordVerify")
+    otp = request.form.get("OTP")
+
+    # Always clear out the password so we don't copy it back to the form.
+    request.form["Password"] = request.form["PasswordVerify"] = ""
+
+    if not otp:
+        return redirect(url_for("login"))
+
+    # Does this match the current one-time password?
+    result = ddb_events.get_item(Key={"EventId": "_"})
+    item = result.get("Item", {})
+    otp_hash = item.get("OneTimePasswordHash")
+
+    def redo(status_code):
+        return make_response(
+            render_template("admin_otp.html", form=request.form), status_code)
+
+    if not otp_hash:
+        flash("<b>One-time password expired. Login using your administrative "
+              "credentials.</b>",category="error")
+        return redirect(url_for("admin"))
+
+    if not pbkdf2_sha512.verify(otp, otp_hash):
+        flash("<b>Invalid one-time password.</b>", category="error")
+        return (render_template("error.html"), UNAUTHORIZED, {})
+
+    if action == "OTPCreate":
+        if not validate_email(email):
+            flash("<b>Invalid email address</b>", category="error")
+            redo(BAD_REQUEST)
+
+        password_errors = get_password_errors(password, password_verify)
+
+        if password_errors:
+            flash("<b>Invalid password:</b><br>" +
+                  "<br>".join(password_errors), category="error")
+            return redo(BAD_REQUEST)
+
+        pwhash = pbkdf2_sha512.encrypt(
+            password, rounds=app.config["PBKDF2_SHA512_ROUNDS"])
+
+        user_item = {
+            "Email": email,
+            "EventId": "_",
+            "PasswordHash": pwhash,
+            "CreationDate": int(time()),
+        }
+
+        ddb_users.put_item(Item=user_item)
+        session["Email"] = email
+        session["EventId"] = "_"
+        return redirect(url_for("admin"))
+
+    flash("<b>Invalid action: %s</b>" % action, category="error")
+    return render_template("admin_otp.html", form=request.form)
 
 
 def handle_one_time_password_generation(event):
