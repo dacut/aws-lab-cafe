@@ -1,0 +1,64 @@
+{% extends "frame.html" %}
+{% block title %}Login{% endblock %}
+{% block body_container %}
+<div class="row">
+  <div class="col-xs-12 col-sm-6">
+    <h2>Administrative Login</h2>
+    <p>Enter your username and password used for site administration.</p>
+    <p>If you are attempting to launch a lab, <a href="{{url_for("login")}}">click here</a>.</p>
+    <form name="login" action="{{url_for("login")}}" method="POST">
+      <div class="form-group">
+        <label for="EventId">Event Code</label>
+        <input type="text" class="form-control" id="EventId" name="EventId" placeholder="EVENTCODE">
+      </div>
+      <div class="form-group">
+        <label for="Email">Email</label>
+        <input type="email" class="form-control" id="Email" name="Email" placeholder="user@domain">
+      </div>
+      <div class="form-group">
+        <label for="Password">Password</label>
+        <input type="password" class="form-control" id="Password" name="Password" placeholder="password">
+      </div>
+      <input type="hidden" name="Action" value="Login">
+      {{csrf_field()}}
+      <input type="submit" class="btn btn-primary" value="Submit">
+    </form>
+  </div>
+  <div class="col-xs-12 col-sm-6">
+    <h2>New Users</h2>
+    <form name="register" action="{{url_for("login")}}" method="POST">
+      <div class="form-group">
+        <label for="EventId">Event Code</label>
+        <input type="text" class="form-control" id="EventId" name="EventId" placeholder="EVENTCODE">
+      </div>
+      <div class="form-group">
+        <label for="FullName">Full Name</label>
+        <input type="text" class="form-control" id="FullName" name="FullName" placeholder="Firstname Lastname">
+      </div>
+      <div class="form-group">
+        <label for="Email">Email</label>
+        <input type="email" class="form-control" id="Email" name="Email" placeholder="user@domain">
+      </div>
+      <div class="form-group">
+        <label for="Password">Password</label>
+        <input type="password" class="form-control" id="Password" name="Password" placeholder="password">
+        <div class="hint">
+          Passwords are case sensitive, must be at least {{site_info.min_password_length}} characters long,
+          and must contain a mixture of upper- and lower-case letters, digits, and symbols.
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="PasswordVerify">Type your password again</label>
+        <input type="password" class="form-control" id="PasswordVerify" name="PasswordVerify" placeholder="password">
+      </div>
+      <div class="form-group">
+        <label><input type="checkbox" name="AllowContact" checked> Allow {{site_info.organization}} to contact me with a follow up survey to gauge the effectiveness of this lab.</label>
+      </div>
+      <input type="hidden" name="Action" value="Register">
+      <input type="submit" class="btn btn-primary" value="Submit">
+      {{csrf_field()}}
+    </form>
+
+  </div>
+</div>
+{% endblock body_container %}
